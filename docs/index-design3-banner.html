@@ -1,0 +1,1256 @@
+<!doctype html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <!-- Non-standard hints that nudge some Android browsers toward landscape. -->
+  <meta name="screen-orientation" content="landscape">
+  <meta name="x5-orientation" content="landscape">
+  <!-- Enables fullscreen mode when added to iOS/Android home screen,
+       which is a prerequisite for screen.orientation.lock() on some platforms. -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <title>Festiwal Młodej Muzyki 2025 (Design 3: banner)</title>
+  <link rel="icon" href="data:,">
+
+  <!-- Reveal.js core -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@6.0.1/dist/reset.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@6.0.1/dist/reveal.css">
+
+  <!-- EMBEDDED CSS -->
+  <style>
+    /* Festival white/blue palette, see README.md's Festival color palette table. */
+    :root {
+      --primary-color: #378cbe;
+      --accent-color: #2a6e94;
+      --text-color: #1c1b17;
+      --muted-color: #5a7a8c;
+      --crimson: #e30d41;
+    }
+
+    html, body {
+      overscroll-behavior: none;
+    }
+
+    html {
+      height: 100dvh;
+    }
+
+    /* Fix the body to the viewport so the document itself can never
+       scroll. A page that cannot scroll gives mobile browsers no reason to
+       collapse or expand the URL bar on finger movements, which keeps the
+       viewport size stable. The rule is inert on desktop because the content
+       already fits the viewport, so the same code serves every platform. */
+    body {
+      position: fixed;
+      inset: 0;
+      overflow: hidden;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    /* White background applied at every layer Reveal.js uses, because
+       backgroundColor in Reveal.initialize only sets an inline style on
+       .reveal-viewport after JS runs, which reveal.css may temporarily
+       override, and .slide-background elements are separate. */
+    body,
+    .reveal-viewport,
+    .reveal .slide-background {
+      background-color: #ffffff;
+    }
+
+    .reveal {
+      font-family: "Source Sans Pro", Helvetica, sans-serif;
+      font-size: 32px;
+      color: var(--text-color);
+    }
+
+    .reveal h1, .reveal h2 {
+      font-family: "Source Sans Pro", Helvetica, sans-serif;
+      text-transform: none;
+      color: var(--text-color);
+      font-weight: 600;
+      line-height: 1.2;
+    }
+
+    .reveal a {
+      color: var(--primary-color);
+      text-decoration: underline;
+    }
+
+    .reveal a:hover {
+      color: var(--accent-color);
+    }
+
+    .reveal .slides section {
+      width: 100%;
+      height: 100%;
+      padding: 60px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    /* This design has a single slide: a banner title bar, the four weekend
+       panes, and the horizontal-scrolling event list stay on screen
+       together as a flex column (header / content), the same
+       disableLayout/!important mechanism as index-design1-slider.html (see
+       README.md's Implementation overview for the full explanation of why
+       display:flex needs !important here). Unlike that design, there is no
+       map or map footer: this design drops the map entirely, so the
+       banner, weekend panes, and event row (all sized to their own
+       content, not stretched to fill the map's old space, see
+       .festival-header and .festival-content below) together form one
+       compact block, shorter than the viewport on most windows.
+       justify-content: center, not flex-start: with the map gone there is
+       nothing left in this column that grows to fill the viewport, so a
+       shorter viewport than the block's own height is not a concern this
+       design needs to guard against the way index-design1-slider.html's
+       own top-anchoring does (see that design's "Fixed-pixel safety
+       margins" entry, where flex-start specifically confines an overflow
+       risk to the bottom). Centering the whole block, banner included,
+       splits whatever blank space is left on a tall window evenly above
+       and below it instead of leaving it all as one large trailing gap
+       below the event row, which read as visibly empty rather than a
+       deliberate composition on a tall desktop window. An earlier version
+       of this design anchored only the weekend-row/event-row block to the
+       top of the space below a separately fixed, always-at-the-very-top
+       banner (see this design's own Abandoned ideas in README.md); that
+       is a different arrangement from centering the whole composition
+       together, which has no fixed piece for a centered piece to look
+       detached from.
+       No top padding here, unlike index-design1-slider.html's own 18px
+       fixed-pixel buffer above its title (see that design's own
+       Implementation overview, "Fixed-pixel safety margins for the
+       header top and the map footer"): two earlier versions of this rule
+       (first 18px, then doubled to 36px trying to also fix the banner's
+       own cropping, which this padding cannot do, since that cropping
+       happens inside .festival-header's own background regardless of how
+       far down the header starts, see .festival-banner below for the
+       actual fix) were both reverted after review, since the banner PNG
+       already has its own built-in white margin above the wordmark (see
+       screen1.jpeg), making an extra reserved margin above the header
+       redundant on a short screen, where every pixel is needed for the
+       weekend row and event row instead (confirmed as short as 540x240,
+       not just 540x320, see this design's own Abandoned ideas in
+       README.md); on a taller window, centering the whole block (above)
+       distributes any such leftover space on its own, without a fixed
+       padding value to tune for that case specifically. */
+    .festival-slide {
+      padding: 0 !important;
+      position: relative;
+      overflow: hidden;
+      display: flex !important;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    /* fmm_banner.png as the header's own background, shown at full opacity
+       with no text overlaid on it: the banner artwork already carries the
+       festival's own wordmark, so a separate on-page title would duplicate
+       it (see the sr-only heading below for why one still exists in the
+       markup, just not rendered). An earlier version of this file rendered
+       an on-page title over the banner, which needed a white wash for text
+       contrast; both the title and the wash were dropped together, since
+       the wash's only purpose was protecting text that no longer renders.
+       This is also the idea index-design1-slider.html tried and dropped
+       for being cropped to an unreadable sliver once squeezed into a
+       compact header competing with the map for vertical space (see that
+       design's own Abandoned ideas). Without a map to share the screen
+       with, this header can be sized generously so the banner reads as
+       recognizable branding instead of background noise.
+       No explicit height: .festival-header is flex:0 0 auto, sized to its
+       .festival-banner child's own height, which in turn is driven purely
+       by aspect-ratio below rather than any vh-based clamp() this file
+       tried first. A clamp() height, however generous, is still a fixed
+       ceiling picked ahead of time; screenshots at increasing widths
+       showed background-size:cover cropping into the banner's own crowd
+       artwork (and, at the most extreme widths, its wordmark) whenever
+       the actual viewport width needed a taller box than that ceiling
+       allowed to stay uncropped, even on a tall window with plenty of
+       spare height below the event row going unused. aspect-ratio removes
+       the guesswork: the header is always exactly as tall as its own
+       (already width-matched, see the side padding note below) width
+       needs to show the whole banner with no cropping at all, at every
+       viewport size, not just the ones a chosen clamp() ceiling happened
+       to cover well.
+       24px side padding, matching .festival-content's own side padding
+       below: the banner's inner width is what .festival-banner (below)
+       sizes itself against, so this keeps the banner exactly as wide as
+       the weekend-pane row and event row underneath it, rather than the
+       full viewport edge to edge.
+       No height or max-height set here: this element is flex:0 0 auto,
+       so it simply takes on whatever height .festival-banner's own
+       content resolves to below, including that child's own defensive
+       max-height cap on an unusually wide/short window (see below). A
+       max-height set on this element instead of on .festival-banner was
+       tried first and did not work: capping a flex item's own auto-height
+       does not shrink its child's independently-computed height (from
+       aspect-ratio) to match, since a parent's max-height is not a
+       constraint that cascades down to a child's own sizing, so the
+       banner just overflowed past this element's now-shorter box instead
+       of actually getting smaller. */
+    .festival-header {
+      flex: 0 0 auto;
+      padding: 0 24px;
+    }
+
+    /* Plain inner element rather than putting the background directly on
+       .festival-header: aspect-ratio below needs to resolve against this
+       element's own width, which is the header's width minus its 24px
+       side padding; applying aspect-ratio directly to .festival-header
+       instead would size the padding box itself off the wider,
+       pre-padding width, undoing the inset from matching the panes below.
+       aspect-ratio: 1160 / 214.2, a pre-scale crop of the banner PNG's own
+       1160x252 pixel dimensions (see README.md's Festival color palette
+       section for how they were read), not the full source ratio: 5% of
+       the source's 252px height (12.6px) is cut from the top and 10%
+       (25.2px) from the bottom before this ratio is computed, shrinking
+       the header's rendered height for a given width beyond what showing
+       the full, uncropped source would need. This is safe on the top
+       edge specifically because it is mostly blank there already: a
+       throwaway PNG-pixel-reading script (pure zlib/struct, no new
+       dependency, the same approach the Festival color palette section's
+       own script used) found the source's first non-blank (non-white)
+       row at y=30 (11.9% down), comfortably below this 12.6px/5% cut
+       line, so no wordmark or logo pixels are lost, only true blank
+       margin; the same script found zero blank rows at the very bottom,
+       so the 25.2px/10% cut there does remove real crowd artwork, which
+       is expected and was confirmed acceptable before this change (the
+       crowd has repetitive content to spare, the same reasoning
+       index-design1-slider.html's own portrait landing card poster
+       crop uses, see the Mobile Portrait Landing Card section).
+       background-size: 100% auto (not cover) renders the banner at its
+       own native ratio scaled to the box's full width, taller than the
+       box's own (now-cropped) height; background-position: center 33.33%
+       then selects which part of that taller rendering shows inside the
+       box: 33.33% is 12.6px / (12.6px + 25.2px), the top cut's own share
+       of the total 37.8px removed, so the visible window is offset by
+       exactly the intended 12.6px from the top rather than split evenly
+       or taken entirely from one edge.
+       max-height: 55vh is a defensive ceiling on top of this normal
+       sizing, not this rule's everyday behavior: on an unusually wide but
+       short window (checked with the puppeteer container down to
+       2560x700), a width-driven banner would need more height than such
+       a short viewport has left over for the weekend row and event row
+       below it once this header takes its share, clipping them, the same
+       category of edge case index-design1-slider.html's own #map
+       min-height defensive floor guards against, just a ceiling here
+       instead of a floor. Past that ceiling, background-position's own
+       percentage keeps selecting a centered-on-33.33% window of whatever
+       height is actually available, cropping a bit more off both edges
+       rather than letting the layout below run out of room. */
+    .festival-banner {
+      width: 100%;
+      aspect-ratio: 1160 / 214.2;
+      max-height: 55vh;
+      background-image: url('fmm_banner.png');
+      background-size: 100% auto;
+      background-position: center 33.33%;
+      background-color: #ffffff;
+    }
+
+    /* Visually hidden but still reachable by screen readers: WCAG 2.2
+       expects a page to have a real heading, but the banner's own
+       wordmark (see .festival-header above) already shows the title to a
+       sighted visitor, so this is not also rendered on screen. Standard
+       clip-to-1px technique (not display:none, which assistive
+       technology skips entirely). */
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+
+    /* Holds the weekend panes and the event row, sized to their own
+       content (flex: 0 0 auto), not stretched to fill the space the map
+       used to occupy in index-design1-slider.html: this design has
+       nothing left in the .festival-slide column that needs to grow to
+       fill the viewport (see that rule's own comment for why it centers
+       the whole banner/weekend-row/event-row block instead), and a flex
+       item with flex-grow:1 here would consume 100% of the space
+       .festival-slide has left over for its own justify-content:center
+       to redistribute, making that centering silently do nothing; this
+       was found exactly that way (an earlier version of this rule kept
+       flex: 1 1 auto after .festival-slide's own justify-content changed
+       to center, and every viewport size still measured the header
+       starting flush at the very top, with all the leftover space still
+       trailing after the event row instead of being centered).
+       justify-content: flex-start here is a separate, smaller-scale
+       concern from .festival-slide's own centering: it only keeps the
+       weekend row directly above the event row with a small gap (see
+       below) between just those two, not related to how the whole block
+       sits within the page.
+       padding-top and gap both use clamp(4px, 2vh, ...): a real Android
+       phone in landscape (screen1.jpeg, Chrome, checked against the
+       published GitHub Pages site rather than only in the puppeteer
+       container) showed both the banner's own top and the last event
+       pane's own bottom clipped by the browser's status bar and URL bar,
+       which eat a much larger fraction of a short real landscape screen's
+       height than of a tall desktop window; a follow-up screenshot (a
+       Chrome DevTools responsive view set to 540x240, not the 540x320
+       first assumed) confirmed the real device is shorter than this file
+       had been checked against, and still showed the event row's own
+       last line clipped. A flatter, larger gap here (this rule's own
+       floor was previously 8px, and before that an uncapped max(20px,
+       8vh)) left too little of that short screen's real budget for the
+       header and the two rows themselves. Shrinking the padding-top
+       floor to 4px, and (after this still was not enough on the
+       shortest real screen) the gap floor further still, to 2px, is the
+       same halving-margins approach index-design1-slider.html's own
+       header used for the analogous real-device-only clipping problem
+       (see that design's "Fixed-pixel safety margins" entry), leaving
+       more of a short real screen's height for the header banner and
+       the two content rows instead of for gaps between them; both
+       ceilings are unchanged throughout, since these gaps already read
+       fine on a tall desktop window (2vh, well under either ceiling,
+       decides the gap there, not the floor), so only the floors that a
+       short mobile screen actually hits needed shrinking. */
+    .festival-content {
+      flex: 0 0 auto;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+      gap: clamp(2px, 2vh, 20px);
+      padding: clamp(4px, 2vh, 24px) 24px 0 24px;
+      overflow: hidden;
+    }
+
+    .weekend-row {
+      flex: 0 0 auto;
+      display: flex;
+      flex-direction: row;
+      gap: 8px;
+    }
+
+    /* Shared card style for weekend and event panes: white with a festival
+       blue border, inviting a click via a hover lift rather than looking
+       like static text. */
+    .weekend-pane, .event-pane {
+      display: block;
+      background-color: #ffffff;
+      border: 2px solid var(--primary-color);
+      border-radius: 8px;
+      text-align: left;
+      cursor: pointer;
+      font-family: inherit;
+      transition: transform 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
+    }
+
+    .weekend-pane:hover, .event-pane:hover {
+      background-color: #eef7fb;
+      box-shadow: 0 4px 12px rgba(55, 140, 190, 0.3);
+      transform: translateY(-2px);
+    }
+
+    .weekend-row .weekend-pane {
+      flex: 1 1 0;
+      min-width: 0;
+      min-height: 0;
+      padding: 4px 6px;
+      text-align: center;
+      overflow: hidden;
+    }
+
+    /* Single line each, shrinking via clamp() on the narrowest phones
+       instead of wrapping to a second line, which was measured (in
+       index-design1-slider.html) to nearly triple the header's height.
+       white-space nowrap is safe here because both strings are short and
+       fixed (a date range, a two/three-word title). */
+    .weekend-row .pane-dates,
+    .weekend-row .pane-title {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .weekend-row .pane-dates {
+      font-size: clamp(7pt, 1.6vh, 11pt);
+    }
+
+    .weekend-row .pane-title {
+      font-size: clamp(8pt, 1.9vh, 13pt);
+    }
+
+    /* Highlights the weekend that is currently running or, if none is,
+       the next upcoming one (see selectDefaultWeekend() below), and any
+       weekend the visitor taps afterwards. */
+    .weekend-pane.selected {
+      background-color: var(--primary-color);
+      border-color: var(--accent-color);
+      box-shadow: 0 0 0 3px rgba(55, 140, 190, 0.35);
+    }
+
+    .weekend-pane.selected .pane-dates,
+    .weekend-pane.selected .pane-title {
+      color: #ffffff;
+    }
+
+    /* Gray-shades a weekend/event pane whose date (day resolution, not the
+       specific hour) has fully elapsed. Same treatment as
+       index-design1-slider.html: white background kept (blends in like any
+       other unselected card), border and text set to an explicit, solid
+       gray (#767676, WCAG 2.2-safe against white), so it reads as legible
+       but secondary rather than faded, emphasized, or disabled. Comes after
+       the .selected rules above on purpose, so a pane that is both selected
+       and past reads as past first, since that is a fact about the date
+       rather than a transient UI state. */
+    .weekend-pane.past,
+    .event-pane.past {
+      border-color: #767676;
+    }
+
+    .weekend-pane.past .pane-dates,
+    .weekend-pane.past .pane-title,
+    .event-pane.past .pane-datetime,
+    .event-pane.past .pane-title,
+    .event-pane.past .pane-venue,
+    .event-pane.past .pane-description {
+      color: #767676;
+    }
+
+    .pane-dates, .pane-datetime {
+      font-size: 11pt;
+      color: var(--muted-color);
+      margin: 0 0 4px 0;
+    }
+
+    .weekend-pane.selected .pane-dates {
+      color: #eaf5fb;
+    }
+
+    .pane-title {
+      font-size: 13pt;
+      font-weight: 600;
+      color: var(--text-color);
+      margin: 0;
+    }
+
+    .pane-venue {
+      font-size: 10pt;
+      color: var(--primary-color);
+      margin: 4px 0 0 0;
+    }
+
+    /* Lays the two prev/next arrow buttons and the event row itself out as
+       three plain flex siblings, arrows on the outside, the same
+       .event-row-wrapper mechanism as index-design1-slider.html (see that
+       design's Implementation overview for why: it keeps the arrows in
+       their own layout space that a card can never be positioned under).
+       flex:0 0 auto (this wrapper sizes to its own content, unlike
+       .festival-content above which fills the space the map used to
+       occupy): align-items:center here only centers the 28px arrow
+       buttons against the row's own content height, a separate, narrower
+       concern from how .festival-content positions the weekend row and
+       this whole event row within the page's freed vertical space. */
+    .event-row-wrapper {
+      flex: 0 0 auto;
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      gap: 2px;
+    }
+
+    /* Horizontal-scrolling event list for the selected weekend. Finger
+       swipe/drag still works natively via plain overflow-x:auto (no JS
+       pans it); the prev/next arrow buttons are an additional, explicit
+       affordance for both mouse and touch, replacing the browser's own
+       scrollbar (see the scrollbar-hiding rules below).
+       No explicit height, unlike index-design1-slider.html's
+       clamp(64px, 11vh, 96px): that design fixed this row to a short height
+       to leave room for the map below it. This design has no map, so
+       instead of stretching the row to fill all the freed space (which
+       measured as mostly-empty cards on a large desktop window, four short
+       text lines lost in a 350px-plus card), the row is left to size to its
+       own content height (the tallest card's natural height, shared by
+       every card via align-items:stretch below) and is then centered as a
+       whole block within .event-row-wrapper's own larger height (see
+       align-items:center there) by the wrapper, not stretched to fill it.
+       That gives the row generous breathing room around it, comfortably
+       fitting the event panes' 4th line (description, see
+       .event-scroll-row .pane-description below), without individual cards
+       looking oversized. flex-grow:1 (the first value below) is still
+       needed regardless of the height change above: it is what makes this
+       row fill the horizontal space between the two arrow buttons, an
+       entirely separate axis from the height discussion above (the
+       wrapper's main axis is horizontal, since .event-row-wrapper is
+       flex-direction:row). */
+    .event-scroll-row {
+      flex: 1 1 auto;
+      min-width: 0;
+      display: flex;
+      flex-direction: row;
+      align-items: stretch;
+      gap: 8px;
+      padding: 4px 8px;
+      overflow-x: auto;
+      overflow-y: hidden;
+      -webkit-overflow-scrolling: touch;
+      /* Firefox: hides the native scrollbar. The prev/next arrow buttons
+         are the only scroll affordance shown; native scrollbars render
+         inconsistently across mobile browsers. */
+      scrollbar-width: none;
+    }
+
+    /* Chrome/Safari/most mobile WebViews: same scrollbar-hiding intent as
+       scrollbar-width above, via the vendor-prefixed pseudo-element these
+       engines use instead. */
+    .event-scroll-row::-webkit-scrollbar {
+      display: none;
+    }
+
+    /* Prev/next arrow buttons, styled after the circular "skip to next
+       product" arrows common on shopping-basket horizontal carousels: a
+       filled circle, large enough to be an easy tap target (28px, close
+       to the WCAG 2.2 24x24 CSS px minimum target size). flex:0 0 auto
+       keeps it at its own width regardless of how much space the row next
+       to it needs. */
+    .event-scroll-arrow {
+      flex: 0 0 auto;
+      width: 28px;
+      height: 28px;
+      padding: 0;
+      border-radius: 50%;
+      border: 2px solid var(--primary-color);
+      background-color: rgba(255, 255, 255, 0.92);
+      color: var(--primary-color);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+      transition: background-color 0.15s ease;
+    }
+
+    .event-scroll-arrow:hover {
+      background-color: #eef7fb;
+    }
+
+    .event-scroll-arrow svg {
+      width: 14px;
+      height: 14px;
+    }
+
+    /* Hidden, not just visually disabled, once the row has no further
+       room to scroll in that direction (see updateEventScrollArrows()
+       below): with only a handful of events per weekend, an arrow that is
+       always present but inert would invite a click that visibly does
+       nothing. */
+    .event-scroll-arrow.hidden {
+      display: none;
+    }
+
+    /* flex-basis kept at the same 200px as index-design1-slider.html's
+       event panes: only the row's height grew (see .event-scroll-row
+       above), not its width, since the extra vertical room is what lets a
+       4th line (description) fit without needing a wider card too.
+       display:flex column + justify-content:center (unlike that design's
+       plain block pane) centers each card's 4 stacked lines as a group
+       within its own height, rather than pinning them to the top: every
+       card in the row is stretched to match the tallest one's natural
+       content height (align-items:stretch on .event-scroll-row above), so
+       a card whose own text is shorter than its tallest neighbor (e.g. a
+       venue name or description that fits without wrapping) would
+       otherwise show its text pinned to the top with dead space below.
+       4px vertical padding, not the 10px an earlier version of this file
+       used: matched to .weekend-row .weekend-pane's own 4px vertical
+       padding above, so the two pane types read as the same card family
+       and, on a short real mobile screen, so this row does not spend more
+       of its own already-tight height budget on padding than the
+       weekend-pane row above it does. Horizontal padding stays 12px,
+       unrelated to a short screen's vertical budget. */
+    .event-scroll-row .event-pane {
+      flex: 0 0 200px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 4px 12px;
+      overflow: hidden;
+    }
+
+    /* Same clamp() sizing family as the weekend panes above, not a larger
+       fixed size, so the two pane types read as the same font scale
+       family at every viewport height. The title clamp is smaller than the
+       weekend pane's own clamp(8pt, 1.9vh, 13pt) for the same reason as
+       index-design1-slider.html: an event pane sits closer to its
+       neighbors in a shorter row, and a title as large as a weekend pane's
+       reads disproportionately bold for a subordinate list item. */
+    .event-scroll-row .pane-datetime {
+      font-size: clamp(7pt, 1.6vh, 11pt);
+    }
+
+    .event-scroll-row .pane-title {
+      font-size: clamp(7pt, 1.6vh, 11pt);
+    }
+
+    .event-scroll-row .pane-venue {
+      font-size: clamp(6.5pt, 1.4vh, 10pt);
+    }
+
+    /* The event's one-sentence description, dropped entirely from
+       index-design1-slider.html's event pane for lack of height (see that
+       design's own Implementation overview and Abandoned ideas), fits here
+       because this design's event row is not competing with a map for
+       vertical space (see .event-scroll-row above). Sized a step below the
+       venue line, continuing the same shrinking-by-importance progression
+       already used for title vs. venue. */
+    .event-scroll-row .pane-description {
+      font-size: clamp(6pt, 1.3vh, 9pt);
+      color: var(--muted-color);
+      margin: 4px 0 0 0;
+    }
+
+    /* Title, venue, and description all truncate to a single line with an
+       ellipsis, the same treatment the weekend panes already use for their
+       own dates/title, rather than a multi-line -webkit-line-clamp: this
+       removes this row's own exposure to the Chromium -webkit-line-clamp
+       flex-sizing quirk documented in index-design1-slider.html's
+       Implementation overview (an unclamped element's full content height
+       leaking into the row's own layout), instead of only working around
+       it with min-height:0 again. */
+    .event-scroll-row .pane-title,
+    .event-scroll-row .pane-venue,
+    .event-scroll-row .pane-description {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* Highlights the event pane whose poster is currently open (see
+       openEventPoster() below), cleared when the poster closes. Crimson,
+       not festival blue, so it reads as a distinct "this one is open"
+       state rather than another selectable-but-inactive pane; the same
+       visual language index-design1-slider.html uses for the event pane
+       matching the map's single marker, reused here for the pane whose
+       poster is open instead, since this design has no map/marker. */
+    .event-scroll-row .event-pane.selected {
+      border-color: var(--crimson);
+      box-shadow: 0 0 0 3px rgba(227, 13, 65, 0.3);
+    }
+
+    .event-placeholder-note {
+      align-self: center;
+      color: var(--muted-color);
+      font-size: 12pt;
+      margin: 0;
+    }
+
+    /* Portrait overlay — shown via @media below; hidden by default.
+       Uses the festival's own white/black/blue palette, independent of the
+       --primary-color etc. custom properties above. */
+    #portrait-warning {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background-color: #ffffff;
+      z-index: 9999;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 16px;
+      text-align: center;
+      padding: 40px;
+      font-family: "Source Sans Pro", Helvetica, sans-serif;
+    }
+
+    .festival-poster {
+      position: relative;
+      width: 100%;
+      max-width: 280px;
+      display: block;
+      overflow: hidden;
+    }
+
+    .festival-poster img {
+      display: block;
+      width: 100%;
+      height: auto;
+      border-radius: 0 0 8px 8px;
+      transform: scale(1.15);
+      transform-origin: center 20%;
+    }
+
+    .rotate-cta {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      gap: 16px;
+    }
+
+    #portrait-warning .rotate-icon {
+      width: 24px;
+      height: auto;
+      transform-origin: 50% 50%;
+      animation: hint-rotate 2.25s ease-in-out infinite;
+    }
+
+    @keyframes hint-rotate {
+      0%, 100% { transform: rotate(0deg); }
+      50%       { transform: rotate(30deg); }
+    }
+
+    .festival-wave-divider {
+      width: 100%;
+      max-width: 280px;
+      height: 20px;
+      display: block;
+      transform: scaleY(-1);
+    }
+
+    #portrait-warning p {
+      color: #004878;
+      font-size: 14pt;
+      white-space: nowrap;
+      margin: 0;
+    }
+
+    /* On small portrait screens, show the overlay and hide the presentation. */
+    @media screen and (orientation: portrait) {
+      #portrait-warning { display: flex; }
+      .reveal          { display: none; }
+    }
+
+    /* Fullscreen poster overlay. Positioned toward the right edge of the
+       screen because the source posters are portrait-oriented and the
+       presentation is landscape; a future clean/landscape poster would not
+       need this. */
+    .poster-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 10000;
+      display: none;
+      align-items: center;
+      justify-content: flex-end;
+      background: rgba(28, 27, 23, 0.65);
+    }
+
+    .poster-overlay.open {
+      display: flex;
+    }
+
+    /* Wraps the image so the close button (below) can be positioned
+       relative to the image's own corner instead of a fixed viewport
+       corner. max-height uses dvh, not vh: plain vh resolves against the
+       large viewport (the size the page would have with the mobile
+       browser's address bar hidden), not the actually visible one, the
+       same distinction documented for html { height: 100dvh; } above. */
+    .poster-frame {
+      position: relative;
+      margin-right: 4vw;
+      max-height: 92dvh;
+      max-width: 55vw;
+    }
+
+    .poster-frame img {
+      display: block;
+      max-height: 92dvh;
+      max-width: 55vw;
+      border-radius: 8px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+    }
+
+    /* Straddles the image's top-right corner (half in, half out) rather
+       than covering its content: a standard "badge" placement. Still well
+       above the WCAG 2.2 24x24 CSS px minimum target size. */
+    .poster-close {
+      position: absolute;
+      top: -18px;
+      right: -18px;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: #ffffff;
+      color: var(--crimson);
+      border: 2px solid var(--crimson);
+      font-size: 24px;
+      line-height: 1;
+      font-weight: bold;
+      cursor: pointer;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+    }
+  </style>
+</head>
+<body>
+  <!-- Portrait landing card asking the visitor to rotate to landscape,
+       showing the festival's own poster. Unchanged from
+       index-design1-slider.html: this design is landscape too, per
+       README.md's Multiple candidate designs section. -->
+  <div id="portrait-warning">
+    <svg class="festival-wave-divider" viewBox="0 0 300 20" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none" aria-hidden="true">
+      <path d="M0,10 Q37.5,0 75,10 T150,10 T225,10 T300,10 V20 H0 Z" fill="#9be6fa"/>
+    </svg>
+    <div class="festival-poster">
+      <img src="fmm_plakat.png" alt="Festiwal Młodej Muzyki">
+    </div>
+    <div class="rotate-cta">
+      <p>Obróć urządzenie poziomo</p>
+      <svg class="rotate-icon" viewBox="0 13 173 530" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <circle cx="86" cy="20" r="7" fill="#1c1b17"/>
+        <line x1="64" y1="52" x2="86" y2="57" stroke="#1c1b17" stroke-width="5" stroke-linecap="round"/>
+        <line x1="110" y1="52" x2="86" y2="57" stroke="#1c1b17" stroke-width="5" stroke-linecap="round"/>
+        <line x1="64" y1="65" x2="86" y2="60" stroke="#1c1b17" stroke-width="5" stroke-linecap="round"/>
+        <line x1="110" y1="65" x2="86" y2="60" stroke="#1c1b17" stroke-width="5" stroke-linecap="round"/>
+        <rect x="80" y="60" width="13" height="105" fill="#1c1b17"/>
+        <path d="M93,160 C120,168 135,178 135,185 C140,195 142,200 142,208 C140,222 126,230 124,242 C122,258 138,290 146,300 C152,320 156,350 156,362 C156,378 152,386 148,392 C130,415 100,428 84,436 L80,300 L80,190 L80,160 Z" fill="#1c1b17"/>
+        <g fill="#1c1b17">
+          <rect x="16" y="155" width="69" height="30"/>
+          <rect x="16" y="189" width="69" height="26"/>
+          <rect x="20" y="251" width="65" height="30"/>
+          <rect x="18" y="283" width="67" height="28"/>
+          <rect x="18" y="341" width="67" height="28"/>
+          <rect x="16" y="377" width="69" height="24"/>
+        </g>
+      </svg>
+    </div>
+  </div>
+
+  <div class="reveal">
+    <div class="slides">
+      <!-- The whole presentation is one slide: title, weekend panes, and
+           event list stay visible together, no map. Only Weekend 1 has real
+           event/venue data; Weekends 2-4 show a placeholder note in the
+           event row (see weekendData below) so the weekend-selection and
+           current/upcoming-weekend highlighting can still be assessed for
+           all four before the real 2026 programme is published. -->
+      <section id="festival-slide" class="festival-slide">
+        <div class="festival-header">
+          <h1 class="sr-only">Festiwal Młodej Muzyki 2025</h1>
+          <div class="festival-banner"></div>
+        </div>
+        <!-- Weekend panes and the event row both live here, in the space
+             the map used to occupy in index-design1-slider.html (see
+             .festival-content above), not in the header alongside the
+             title as an earlier version of this file had it. -->
+        <div class="festival-content">
+          <div class="weekend-row" id="weekend-row">
+            <button class="weekend-pane" data-weekend-index="0">
+              <p class="pane-dates">4–6 września 2026</p>
+              <p class="pane-title">Pamięć i tożsamość</p>
+            </button>
+            <button class="weekend-pane" data-weekend-index="1">
+              <p class="pane-dates">11–13 września 2026</p>
+              <p class="pane-title">Dialog z tradycją</p>
+            </button>
+            <button class="weekend-pane" data-weekend-index="2">
+              <p class="pane-dates">18–20 września 2026</p>
+              <p class="pane-title">Nowe brzmienia (Finał)</p>
+            </button>
+            <button class="weekend-pane" data-weekend-index="3">
+              <p class="pane-dates">25–27 września 2026</p>
+              <p class="pane-title">Weekend Szkoły Muzycznej</p>
+            </button>
+          </div>
+          <div class="event-row-wrapper">
+            <!-- Prev/next arrows, the same shopping-carousel mechanism as
+                 index-design1-slider.html on both desktop (click) and mobile
+                 (tap). Native swipe/drag on the row itself still works too. -->
+            <button class="event-scroll-arrow event-scroll-arrow-prev" id="event-scroll-prev" type="button" aria-label="Poprzednie wydarzenie">
+              <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M10.5 2.5 4.5 8l6 5.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+            <div class="event-scroll-row" id="event-scroll-row"></div>
+            <button class="event-scroll-arrow event-scroll-arrow-next" id="event-scroll-next" type="button" aria-label="Następne wydarzenie">
+              <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M5.5 2.5 11.5 8l-6 5.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <!-- Fullscreen event poster overlay, shown directly on an event pane's own
+       click (see openEventPoster() below): unlike index-design1-slider.html,
+       there is no map/marker step in between, since this design has no map.
+       Not a reveal.js slide: it is a plain overlay so the weekend/event
+       panes stay exactly where they were underneath it. -->
+  <div class="poster-overlay" id="poster-overlay">
+    <div class="poster-frame">
+      <!-- No src attribute until openPoster() sets one: browsers fetch an
+           <img> as soon as it is parsed even while hidden by CSS, so
+           src="" would otherwise make an unnecessary request for the
+           current page itself, interpreted as a relative empty URL. -->
+      <img id="poster-overlay-image" alt="">
+      <button class="poster-close" id="poster-close" aria-label="Zamknij plakat wydarzenia">&times;</button>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/reveal.js@6.0.1/dist/reveal.js"></script>
+  <script>
+    // Force the html element height to exactly the current visible
+    // viewport height before Reveal.initialize() reads it for scale calculation.
+    // dvh CSS is ignored on older mobile browsers; this JS approach works universally.
+    function syncViewportHeight() {
+      document.documentElement.style.height = window.innerHeight + 'px';
+    }
+    syncViewportHeight();
+    window.addEventListener('resize', syncViewportHeight);
+
+    // Swallow single-finger scroll gestures so the page never scrolls and the
+    // mobile URL bar neither hides nor shows on finger movements. Two-finger
+    // pinch zoom and panning while zoomed in remain available, which WCAG 2.2
+    // success criterion 1.4.4 requires.
+    document.addEventListener('touchmove', function(event) {
+      if (event.touches.length > 1) return;
+      if (window.visualViewport && window.visualViewport.scale > 1) return;
+      event.preventDefault();
+    }, { passive: false });
+
+    // The event-scroll-row relies on native browser scrolling (no JS pans
+    // it). A native scroll has not happened yet when the document-level
+    // touchmove listener above runs, so its preventDefault() would block the
+    // row's scroll too unless stopped here first. Listeners registered
+    // directly on an element run before the same event reaches document
+    // during the bubble phase, so calling stopPropagation() here keeps the
+    // document handler from ever seeing this gesture.
+    document.getElementById('event-scroll-row').addEventListener('touchmove', function(event) {
+      event.stopPropagation();
+    }, { passive: true });
+
+    // Prev/next arrows: one 'click' listener per button covers both a mouse
+    // click and a touch tap, since browsers synthesize a 'click' from a tap.
+    // The row's own 'scroll' event (fired for both the arrows' smooth scroll
+    // and native drag/swipe) keeps the arrows' shown/hidden state correct
+    // regardless of which of the two moved the row, and 'resize' re-checks
+    // it too, since a width/orientation change can change how much of the
+    // row's own content fits without scrolling at all.
+    document.getElementById('event-scroll-prev').addEventListener('click', function() {
+      scrollEventRow(-1);
+    });
+    document.getElementById('event-scroll-next').addEventListener('click', function() {
+      scrollEventRow(1);
+    });
+    document.getElementById('event-scroll-row').addEventListener('scroll', updateEventScrollArrows, { passive: true });
+    window.addEventListener('resize', updateEventScrollArrows);
+
+    // A mouse wheel or trackpad two-finger swipe both fire 'wheel' events,
+    // which overflow-x:auto would otherwise translate into horizontal
+    // scrolling; blocked here so the arrow buttons are the only non-touch
+    // way to move the row on desktop. A real touchscreen swipe fires
+    // touchstart/touchmove/touchend instead, never 'wheel', so this does
+    // not affect mobile drag-scrolling (handled separately by the
+    // touchmove listener above).
+    document.getElementById('event-scroll-row').addEventListener('wheel', function(event) {
+      event.preventDefault();
+    }, { passive: false });
+
+    // disableLayout: true opts out of Reveal's default behavior of scaling
+    // a fixed-aspect-ratio virtual canvas (1280x720) to fit the viewport,
+    // the same reasoning as index-design1-slider.html: with it, the slide
+    // covers 100% of the real viewport and this file's own flex/vh-based
+    // CSS governs sizing, matching every aspect ratio instead of one
+    // assumed one.
+    Reveal.initialize({
+      backgroundColor: '#ffffff',
+      disableLayout: true,
+      controls: false,
+      progress: false,
+      hash: false
+    });
+
+    // Weekend 1's events use the same placeholder schedule as
+    // index-design1-slider.html (see REQUIREMENTS.md's Event schedule
+    // section), minus the coords field: this design has no map, so a venue's
+    // geocoded coordinates would be dead data here. Only the Inauguracja
+    // poster is a real, verified individual poster; the other events use the
+    // main festival poster as a generic placeholder, since the real 2026
+    // poster for each does not exist yet. Weekend 2 has 2 of its 5 real
+    // events populated; Weekends 3-4 are left empty, since a couple of
+    // populated weekends are enough to assess this design.
+    const weekendData = [
+      {
+        dates: '4–6 września 2026',
+        title: 'Pamięć i tożsamość',
+        startDate: '2026-09-04',
+        endDate: '2026-09-06',
+        events: [
+          {
+            // Both datetime (the displayed label) and date (used for the
+            // .past gray-shading check) are intentionally kept pointing to
+            // a past January date instead of the real 4 September, so
+            // design reviewers can tell why this one card is gray just by
+            // reading it, without knowing today's real date or needing a
+            // mocked clock. Revert both to the real
+            // 'Piątek, 4 września, 17:00' / '2026-09-04' once no longer
+            // needed for review.
+            datetime: 'Czwartek, 1 stycznia, 17:00',
+            date: '2026-01-01',
+            title: 'Inauguracja Festiwalu: Orkiestra Kameralna Polskiego Radia Amadeus',
+            venue: 'Centrum Kultury Dwór Artusa',
+            description: 'Koncert otwierający festiwal z udziałem Orkiestry Kameralnej Polskiego Radia Amadeus.',
+            poster: '01_inauguracja.png'
+          },
+          {
+            datetime: 'Sobota, 5 września, 17:00',
+            date: '2026-09-05',
+            title: 'Spotkanie z kompozytorką',
+            venue: 'Dom Heleny Grossówny',
+            description: 'Rozmowa o współczesnej muzyce polskiej z zaproszoną kompozytorką.',
+            poster: 'fmm_plakat.png'
+          },
+          {
+            datetime: 'Sobota, 5 września, 20:00',
+            date: '2026-09-05',
+            title: 'Głos Młodych: recital solistów',
+            venue: 'Sala Mieszczańska Ratusza Staromiejskiego',
+            description: 'Recital młodych solistów prezentujących nowy repertuar.',
+            poster: 'fmm_plakat.png'
+          },
+          {
+            datetime: 'Niedziela, 6 września, 17:00',
+            date: '2026-09-06',
+            title: 'Warsztaty kompozytorskie',
+            venue: 'Akademickie Centrum Kultury i Sztuki Od Nowa',
+            description: 'Warsztaty dla młodych twórców prowadzone przez kompozytorów festiwalu.',
+            poster: 'fmm_plakat.png'
+          },
+          {
+            datetime: 'Niedziela, 6 września, 20:00',
+            date: '2026-09-06',
+            title: 'Muzyka dawna: koncert organowy',
+            venue: 'Kościół Akademicki pw. Ducha Świętego w Toruniu',
+            description: 'Koncert muzyki dawnej na organach kościoła akademickiego.',
+            poster: 'fmm_plakat.png'
+          },
+          // Not part of the festival's real placeholder schedule (which
+          // gives Weekend 1 exactly five events): added only so the
+          // event-scroll-row's horizontal scroll can be exercised with a
+          // sixth card.
+          {
+            datetime: 'Niedziela, 6 września, 22:00',
+            date: '2026-09-06',
+            title: 'Dodatkowe wydarzenie testowe (scroll)',
+            venue: 'Centrum Kultury Dwór Artusa',
+            description: 'Karta dodana wyłącznie do przetestowania poziomego przewijania listy wydarzeń.',
+            poster: 'fmm_plakat.png'
+          }
+        ]
+      },
+      {
+        dates: '11–13 września 2026',
+        title: 'Dialog z tradycją',
+        startDate: '2026-09-11',
+        endDate: '2026-09-13',
+        // Only 2 of Weekend 2's 5 real placeholder events are included
+        // here, so the weekend-selection and default-highlight logic can
+        // be assessed without leaving this weekend empty.
+        events: [
+          {
+            datetime: 'Piątek, 11 września, 17:00',
+            date: '2026-09-11',
+            title: 'Kaszubskie inspiracje: prawykonania',
+            venue: 'Sala Mieszczańska Ratusza Staromiejskiego',
+            description: 'Prawykonania utworów inspirowanych muzyką ludową Kaszub.',
+            poster: 'fmm_plakat.png'
+          },
+          {
+            datetime: 'Sobota, 12 września, 17:00',
+            date: '2026-09-12',
+            title: 'Wernisaż wystawy "Toruńscy Twórcy"',
+            venue: 'Dom Heleny Grossówny',
+            description: 'Otwarcie wystawy poświęconej toruńskim kompozytorom i wykonawcom.',
+            poster: 'fmm_plakat.png'
+          }
+        ]
+      },
+      { dates: '18–20 września 2026', title: 'Nowe brzmienia (Finał)', startDate: '2026-09-18', endDate: '2026-09-20', events: [] },
+      { dates: '25–27 września 2026', title: 'Weekend Szkoły Muzycznej', startDate: '2026-09-25', endDate: '2026-09-27', events: [] }
+    ];
+
+    /** Returns the index of the weekend to preselect: the first one whose
+     *  end date has not yet passed (covers both "currently running" and
+     *  "next upcoming"), or the last weekend if the festival is over. */
+    function getDefaultWeekendIndex() {
+      const today = new Date();
+      for (let i = 0; i < weekendData.length; i++) {
+        const weekendEnd = new Date(weekendData[i].endDate + 'T23:59:59');
+        if (today <= weekendEnd) return i;
+      }
+      return weekendData.length - 1;
+    }
+
+    /** True once the given day has fully elapsed (day resolution, not the
+     *  specific hour of a weekend's last day or an individual event),
+     *  used to gray-shade past weekend/event panes. */
+    function isDateFullyPast(isoDate) {
+      const today = new Date();
+      const endOfDay = new Date(isoDate + 'T23:59:59');
+      return today > endOfDay;
+    }
+
+    let selectedWeekendIndex = null;
+    let selectedEventIndex = null;
+
+    function updateWeekendPaneStyles() {
+      document.querySelectorAll('.weekend-pane').forEach(function(pane) {
+        const index = Number(pane.dataset.weekendIndex);
+        pane.classList.toggle('selected', index === selectedWeekendIndex);
+        pane.classList.toggle('past', isDateFullyPast(weekendData[index].endDate));
+      });
+    }
+
+    function updateEventPaneStyles() {
+      document.querySelectorAll('#event-scroll-row .event-pane').forEach(function(pane) {
+        const index = Number(pane.dataset.eventIndex);
+        pane.classList.toggle('selected', index === selectedEventIndex);
+      });
+    }
+
+    /** Scrolls the event row by one card width (its flex-basis, 200px,
+     *  plus the row's own 8px gap) in the given direction, smoothly. */
+    function scrollEventRow(direction) {
+      const eventRow = document.getElementById('event-scroll-row');
+      eventRow.scrollBy({ left: direction * 208, behavior: 'smooth' });
+    }
+
+    /** Shows/hides the prev/next arrows to match how far the row can still
+     *  scroll in each direction. Hidden rather than merely disabled at
+     *  either end, and hidden entirely when a weekend has no events yet
+     *  (the placeholder-note case, which has nothing to scroll to). A 1px
+     *  tolerance absorbs the sub-pixel scrollLeft values some browsers
+     *  report at the exact start/end of a scrollable element. */
+    function updateEventScrollArrows() {
+      const eventRow = document.getElementById('event-scroll-row');
+      const prevButton = document.getElementById('event-scroll-prev');
+      const nextButton = document.getElementById('event-scroll-next');
+      const canScroll = eventRow.scrollWidth > eventRow.clientWidth + 1;
+      prevButton.classList.toggle('hidden', !canScroll || eventRow.scrollLeft <= 1);
+      nextButton.classList.toggle('hidden', !canScroll ||
+        eventRow.scrollLeft + eventRow.clientWidth >= eventRow.scrollWidth - 1);
+    }
+
+    /** Rebuilds the horizontal event list for the given weekend. Event pane
+     *  content comes entirely from weekendData above, not user input, so
+     *  building it with innerHTML carries no injection risk. All 4 fields
+     *  (datetime, title, venue, description) are rendered, one more than
+     *  index-design1-slider.html's 3: see .event-scroll-row .pane-description
+     *  above for why this design has the room for it. */
+    function renderEventRow(weekendIndex) {
+      const eventRow = document.getElementById('event-scroll-row');
+      eventRow.innerHTML = '';
+      const events = weekendData[weekendIndex].events;
+      if (events.length === 0) {
+        const note = document.createElement('p');
+        note.className = 'event-placeholder-note';
+        note.textContent = 'Wydarzenia tego weekendu zostaną dodane wkrótce.';
+        eventRow.appendChild(note);
+        updateEventScrollArrows();
+        return;
+      }
+      events.forEach(function(event, eventIndex) {
+        const pane = document.createElement('button');
+        pane.className = 'event-pane';
+        if (isDateFullyPast(event.date)) {
+          pane.classList.add('past');
+        }
+        pane.dataset.eventIndex = String(eventIndex);
+        pane.innerHTML =
+          '<p class="pane-datetime">' + event.datetime + '</p>' +
+          '<p class="pane-title">' + event.title + '</p>' +
+          '<p class="pane-venue">' + event.venue + '</p>' +
+          '<p class="pane-description">' + event.description + '</p>';
+        pane.addEventListener('click', function() {
+          openEventPoster(eventIndex, event);
+        });
+        eventRow.appendChild(pane);
+      });
+      eventRow.scrollLeft = 0;
+      updateEventScrollArrows();
+    }
+
+    function selectWeekend(weekendIndex) {
+      selectedWeekendIndex = weekendIndex;
+      selectedEventIndex = null;
+      updateWeekendPaneStyles();
+      renderEventRow(weekendIndex);
+      updateEventPaneStyles();
+    }
+
+    /** Called directly from an event pane's own click: unlike
+     *  index-design1-slider.html, there is no map/marker step in between,
+     *  since this design has no map (see the design brief in README.md's
+     *  Multiple candidate designs section). Marks the pane selected (the
+     *  same crimson highlight index-design1-slider.html uses for the pane
+     *  matching the map's single marker) and opens its poster. */
+    function openEventPoster(eventIndex, event) {
+      selectedEventIndex = eventIndex;
+      updateEventPaneStyles();
+      openPoster(event);
+    }
+
+    function openPoster(event) {
+      const overlay = document.getElementById('poster-overlay');
+      const image = document.getElementById('poster-overlay-image');
+      image.src = event.poster;
+      image.alt = event.title;
+      overlay.classList.add('open');
+    }
+
+    /** Forces the browser to reset any pinch-zoom level back to 1.0,
+     *  without permanently disabling further pinch-zoom. The poster
+     *  overlay is commonly pinch-zoomed into to read the fine print, and
+     *  without this the zoom level otherwise stays applied to the whole
+     *  page once the poster closes. Momentarily adding maximum-scale to
+     *  the viewport meta tag's content is a documented cross-browser way
+     *  to force this reset (works in Safari iOS and Chrome Android).
+     *  Reverting the attribute on the next two animation frames, rather
+     *  than after a fixed timeout, waits for the browser to actually
+     *  paint the reset (one frame is not reliably enough in every
+     *  browser) instead of guessing a delay long enough to cover it. */
+    function resetPageZoom() {
+      const viewportMeta = document.querySelector('meta[name="viewport"]');
+      const originalContent = viewportMeta.getAttribute('content');
+      viewportMeta.setAttribute('content', originalContent + ', maximum-scale=1.0');
+      requestAnimationFrame(function() {
+        requestAnimationFrame(function() {
+          viewportMeta.setAttribute('content', originalContent);
+        });
+      });
+    }
+
+    /** Closing clears the selected-event highlight (see openEventPoster()
+     *  above) regardless of which event was open, and resets any
+     *  pinch-zoom applied while the poster was open. */
+    function closePoster() {
+      document.getElementById('poster-overlay').classList.remove('open');
+      resetPageZoom();
+      selectedEventIndex = null;
+      updateEventPaneStyles();
+    }
+
+    document.getElementById('poster-close').addEventListener('click', closePoster);
+    document.getElementById('poster-overlay').addEventListener('click', function(event) {
+      if (event.target === event.currentTarget) closePoster();
+    });
+    document.addEventListener('keydown', function(event) {
+      if (event.key === 'Escape') closePoster();
+    });
+
+    document.querySelectorAll('.weekend-pane').forEach(function(pane) {
+      pane.addEventListener('click', function() {
+        selectWeekend(Number(pane.dataset.weekendIndex));
+      });
+    });
+
+    // Preselect the current/upcoming weekend immediately so the weekend row
+    // and event list are correct as soon as the page loads.
+    selectWeekend(getDefaultWeekendIndex());
+
+    Reveal.addEventListener('ready', function() {
+      // Try to lock to landscape; silently fails on iOS and on Android outside
+      // fullscreen/PWA context, which is the expected result for a normal page.
+      if (screen.orientation && screen.orientation.lock) {
+        screen.orientation.lock('landscape').catch(function(error) {
+          console.log('Cannot lock orientation to landscape:', error);
+        });
+      }
+    });
+  </script>
+</body>
+</html>

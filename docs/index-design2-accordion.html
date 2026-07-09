@@ -1,0 +1,1064 @@
+<!doctype html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Festiwal Młodej Muzyki 2025 (Design 2: accordion)</title>
+  <link rel="icon" href="data:,">
+
+  <!-- No reveal.js: unlike index-design1-slider.html, index-design3-banner.html,
+       and index-design4-grid.html, this design has no slide-scaling canvas to
+       manage (disableLayout, the !important display override, and reveal's own
+       reset.css/reveal.css) and no landing-card orientation gate to build on
+       top of a reveal.js instance. The body element itself is the single
+       always-visible flex column those other designs build inside
+       .reveal > .slides > section; see the "No reveal.js" entry in
+       README.md's Implementation overview for why this is a deliberate
+       simplification for this design specifically, not a pattern meant to
+       replace the other three. -->
+
+  <!-- EMBEDDED CSS -->
+  <style>
+    /* Festival white/blue palette, see README.md's Festival color palette table. */
+    :root {
+      --primary-color: #378cbe;
+      --accent-color: #2a6e94;
+      --text-color: #1c1b17;
+      --muted-color: #5a7a8c;
+      --crimson: #e30d41;
+    }
+
+    html, body {
+      overscroll-behavior: none;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    /* Fix the body to the viewport so the document itself can never scroll,
+       the same reasoning as the other three designs (see README.md's Mobile
+       viewport and URL bar behavior section): a page that cannot scroll
+       gives mobile browsers no reason to collapse or expand the URL bar on
+       finger movements. Only #weekend-list below scrolls, as the single
+       region that can outgrow the viewport (every weekend pane is always
+       visible, and any number of them can have their own events expanded
+       beneath them at once, see .weekend-item below), the same "one region
+       scrolls internally, the document itself never does" architecture
+       index-design4-grid.html's own per-column scrolling uses, just one
+       shared region here instead of four independent ones.
+       No html{height:100dvh}/syncViewportHeight() JS fallback here, unlike
+       the other three designs: that pairing exists there so Reveal.js's own
+       percentage-height chain (.reveal/.slides/section, all height:100%)
+       has a concrete, non-auto height to resolve against on browsers that
+       do not support dvh. This design has no such chain: body's own
+       position:fixed + inset:0 already pins it to the actual visible
+       viewport directly, with no intermediate percentage-height ancestor
+       that needs one. Confirmed by measurement (see README.md's Running
+       tests section) that no clipping results from omitting it. */
+    body {
+      position: fixed;
+      inset: 0;
+      overflow: hidden;
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+      background-color: #ffffff;
+      font-family: "Source Sans Pro", Helvetica, sans-serif;
+      color: var(--text-color);
+    }
+
+    /* Visually hidden but still reachable by screen readers: WCAG 2.2
+       expects a page to have a real heading, but the banner's own wordmark
+       (see .festival-header below) already shows the title to a sighted
+       visitor, the same reasoning as index-design3-banner.html's and
+       index-design4-grid.html's own sr-only heading. Standard clip-to-1px
+       technique (not display:none, which assistive technology skips
+       entirely). */
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+
+    .festival-header {
+      flex: 0 0 auto;
+      padding: 0 24px;
+    }
+
+    /* fmm_banner.png cropped on the left and right in portrait, the top and
+       bottom in landscape (see the @media rule below): the header always
+       spans the exact same full width as .weekend-list's own content
+       column below it, on a narrow phone and a wide desktop alike, the
+       same "banner matches the content column's own width" intent
+       index-design3-banner.html's and index-design4-grid.html's own
+       header share, and it is the crop AXIS, not the width, that switches
+       between the two orientations.
+       In portrait, a full-width banner is naturally narrow, so a generous
+       height budget would need to be tall enough to crowd out the
+       weekend-pane list below; cropping the sides instead keeps the
+       header short while keeping the wordmark, the Pomorskie Towarzystwo
+       Muzyczne logo, and the violin icon, the part of the banner that
+       actually identifies the festival, at a readable size (see the crop
+       window measurement 3 rules below). In landscape, a full-width
+       banner is naturally short and wide, the same shape
+       index-design3-banner.html's and index-design4-grid.html's own
+       landscape-only header already has, so this design reuses their own
+       exact mechanism there (see the @media rule below) rather than a
+       new one, instead of trying to force one single formula to cover
+       both a tall-narrow and a short-wide box equally well: an earlier
+       version tried exactly that (a fixed aspect-ratio: 660/252 with
+       max-height: 22vh at every viewport, relying on background-size:
+       cover to adapt), and on an ordinary desktop window that fixed
+       660/252 crop ratio only holds while nothing constrains the box's
+       own height; once the low, portrait-tuned 22vh ceiling binds, as it
+       does even at a plain 1920x1080 window (a 660/252-shaped box that
+       wide would need roughly 715px of height, far past that ceiling),
+       the box's own rendered shape stretches far wider than 660/252 can
+       account for, and cover has to crop into the image's own top and
+       bottom too, cutting into the wordmark rather than only ever
+       cropping the crowd silhouette the way index-design3-banner.html's
+       and index-design4-grid.html's own (much more generous, 55vh/40vh)
+       ceilings do. Reusing their own already-proven mechanism at their
+       own generous ceiling for the landscape case sidesteps the whole
+       problem instead of re-deriving a new crop-bias percentage to
+       compensate for it. */
+    .festival-banner {
+      width: 100%;
+      aspect-ratio: 660 / 252;
+      max-height: 22vh;
+      background-image: url('fmm_banner.png');
+      background-size: auto 100%;
+      background-position: center;
+      background-color: #ffffff;
+    }
+
+    /* Landscape: identical to index-design4-grid.html's own
+       .festival-banner (same source aspect-ratio pre-scale crop, same
+       background-size/position mechanism, see that design's own
+       Implementation overview in README.md for the full rationale of the
+       5%/10% top/bottom pre-scale crop and the 33.33% position value),
+       reused verbatim rather than adapted, since this design's own
+       landscape header needs exactly the same "wide, short box, crop the
+       crowd's own top/bottom margin" treatment that design already
+       solved. max-height: 40vh, the same value design4 itself uses, not
+       this file's own portrait-tuned 22vh: a landscape window here still
+       needs to leave the weekend-pane list below real room, the same
+       reason design4's own schedule grid needed its ceiling tighter than
+       index-design3-banner.html's own 55vh, and 40vh already satisfies
+       that same requirement there.
+       (orientation: landscape) is a real device/window shape query, not
+       a re-introduction of the landscape-lock this design otherwise
+       avoids (see README.md's Implementation overview, "No portrait
+       landing card, no orientation lock"): nothing here gates content or
+       blocks portrait, it only switches which axis the banner crops on
+       to match whichever shape the current window actually is. */
+    @media (orientation: landscape) {
+      .festival-banner {
+        aspect-ratio: 1160 / 214.2;
+        max-height: 40vh;
+        background-size: 100% auto;
+        background-position: center 33.33%;
+      }
+    }
+
+    /* Holds #weekend-list, filling whatever height the header leaves
+       (flex: 1 1 auto, the same flex slot #map holds in
+       index-design1-slider.html and .schedule-grid holds in
+       index-design4-grid.html); min-height: 0 lets it shrink below its own
+       child's natural content size, needed because that child
+       (#weekend-list) needs the same freedom to shrink below whatever
+       height its own, potentially many, expanded event lists add up to, so
+       it can scroll internally instead of growing this element past the
+       viewport. */
+    .festival-content {
+      flex: 1 1 auto;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      padding: 8px 24px 12px 24px;
+    }
+
+    /* The single scrollable region for this design's entire content: every
+       weekend pane is always visible (unlike an earlier version, see this
+       design's own Abandoned ideas in README.md, where tapping a pane hid
+       its 3 siblings; review found that a weekend collapsed out of view
+       with no visible way back to it was confusing), and tapping any
+       number of them independently reveals that weekend's own events
+       beneath its pane, pushing whatever comes after it further down (see
+       .weekend-item and .event-list below). Because several weekends' own
+       event lists can be open at once, the combined content can run taller
+       than the viewport more easily than a single expanded region would,
+       so this list, not an individual weekend's own events, is what
+       scrolls: overflow-y: auto gives finger-swipe and mouse-wheel
+       scrolling for free, and makeListDraggable() below adds plain mouse
+       click-and-drag scrolling on top of that, the same
+       "wheel and touch already work, only mouse-drag needs JS" reasoning
+       index-design4-grid.html's own per-column scroll documents, just
+       applied once here to the whole list instead of once per column.
+       justify-content: flex-start keeps the panes attached directly under
+       the banner header, any leftover height on a tall window collecting
+       as trailing blank space below the list; a centered version was
+       tried first and reverted (see this design's own Abandoned ideas). */
+    .weekend-list {
+      flex: 1 1 auto;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+      gap: 8px;
+      overflow-y: auto;
+      scrollbar-width: none;
+      cursor: grab;
+      user-select: none;
+    }
+
+    .weekend-list.dragging {
+      cursor: grabbing;
+    }
+
+    .weekend-list::-webkit-scrollbar {
+      display: none;
+    }
+
+    /* One weekend's own pane plus, once expanded, its own event list
+       beneath it. Always flex: 0 0 auto (sized to its own content): with
+       .event-list below display:none by default, an unexpanded item is
+       exactly as tall as its own weekend-pane; once expanded, the item
+       simply grows taller to fit its now-visible event list too, the same
+       as any other document content growing (there is no longer a
+       "consume the entire list's height" case to special-case here, unlike
+       the single-open-at-a-time version this replaced, since #weekend-list
+       itself now scrolls to fit however many weekends are open, see that
+       rule above). */
+    .weekend-item {
+      flex: 0 0 auto;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Shared card look for both pane types: white with a festival blue
+       border, the same visual language every other design in this project
+       uses (event panes below tone that border down, see .event-pane's
+       own comment, so the two pane types stay visually distinguishable
+       once both share this same vertical list). Interactivity-specific
+       properties (hover lift) live on both, since both are real <button>
+       elements here, unlike index-design4-grid.html's own non-interactive
+       .weekend-pane (see that design's own comment for why its own
+       weekend pane is a plain <div>): this design's weekend pane is
+       always the primary click target, both to expand and (see
+       .pane-chevron below) to collapse back. flex-direction is set
+       separately below for each pane type, not here: .event-pane stacks
+       its own lines in a column, while .weekend-pane lays its text and
+       chevron out in a row (see below). */
+    .weekend-pane, .event-pane {
+      display: flex;
+      width: 100%;
+      background-color: #ffffff;
+      border: 2px solid var(--primary-color);
+      border-radius: 8px;
+      text-align: left;
+      cursor: pointer;
+      font-family: inherit;
+      transition: transform 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
+    }
+
+    .weekend-pane:hover, .event-pane:hover {
+      background-color: #eef7fb;
+      box-shadow: 0 4px 12px rgba(55, 140, 190, 0.3);
+      transform: translateY(-2px);
+    }
+
+    /* Overrides the shared rule's vivid festival-blue border with a muted,
+       low-opacity tint of --muted-color instead: weekend panes keep the
+       full-strength blue border (inherited unchanged from the shared rule
+       above), so a visitor can tell the two pane types apart by border
+       color alone at a glance, blue meaning "weekend" and this muted tone
+       meaning "event," rather than every pane in the list sharing one
+       identical outline. Kept as a tint of the existing --muted-color
+       custom property, not a new color introduced for this alone, so it
+       still reads as part of the same palette family rather than an
+       unrelated gray. .event-pane.open and .event-pane.past both override
+       this again for their own states (see those rules further below),
+       the same specificity relationship index-design1-slider.html's and
+       index-design3-banner.html's own past/selected overrides rely on. */
+    .event-pane {
+      flex-direction: column;
+      justify-content: center;
+      border-color: rgba(90, 122, 140, 0.35);
+    }
+
+    /* Fills the pane solid festival blue once its own weekend is expanded,
+       the same "this one is open" treatment index-design1-slider.html's
+       and index-design3-banner.html's own .weekend-pane.selected use.
+       Weekend panes keep the plain white/blue-border look otherwise (see
+       .weekend-pane, .event-pane above): a solid blue fill on every
+       weekend pane at once was tried first, to distinguish weekend panes
+       from event panes by color, and reverted after review found it too
+       heavy/dominant for a list of 4; event panes instead got their own
+       muted border (see .event-pane above) to make that same distinction,
+       leaving solid blue free to mean only "this one is open," not also a
+       permanent category marker competing for the same visual channel.
+       :not(.past): a past weekend's own border/text must stay gray even
+       while expanded (see .weekend-pane.past below), so this fill is
+       skipped for that combination rather than needing to out-specificity
+       .weekend-pane.past's own rule. The chevron's own rotation (see
+       .weekend-item.expanded .pane-chevron above) is still what signals
+       expand/collapse for a past-and-expanded pane, this fill is a purely
+       additional cue layered on top for a pane that is not past. */
+    .weekend-item.expanded .weekend-pane:not(.past) {
+      background-color: var(--primary-color);
+      border-color: var(--accent-color);
+      box-shadow: 0 0 0 3px rgba(55, 140, 190, 0.35);
+    }
+
+    .weekend-item.expanded .weekend-pane:not(.past):hover {
+      background-color: var(--accent-color);
+    }
+
+    .weekend-item.expanded .weekend-pane:not(.past) .pane-dates,
+    .weekend-item.expanded .weekend-pane:not(.past) .pane-title,
+    .weekend-item.expanded .weekend-pane:not(.past) .pane-chevron {
+      color: #ffffff;
+    }
+
+    .weekend-item.expanded .weekend-pane:not(.past) .pane-dates {
+      color: #eaf5fb;
+    }
+
+    /* flex: 0 0 auto, one constant padding value, in every state: the pane
+       must read and behave identically whether its own weekend is
+       collapsed or expanded, since tapping it is what toggles between the
+       two (see toggleWeekend() below) and a control that visibly resizes
+       itself on its own click is surprising, the opposite of the least
+       astonishment principle. An earlier version instead stretched the
+       collapsed pane to fill its .weekend-item's full height (flex: 1 1
+       auto) and shrank it back down once expanded; this read as a large,
+       unexplained padding around the pane's own two lines of text in the
+       collapsed state, and as the pane visibly shrinking on tap, both
+       fixed by keeping the pane's own size out of the expand/collapse
+       transition entirely (see .weekend-item above and .event-list below
+       for where that space now comes from instead).
+       flex-direction: row, align-items: center lay the pane's own text
+       block and its chevron (see .pane-chevron below) out side by side,
+       chevron on the right; justify-content: space-between pushes the
+       chevron to the pane's own right edge regardless of how short the
+       text block is. */
+    .weekend-pane {
+      flex: 0 0 auto;
+      flex-direction: row;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 10px 20px;
+      overflow: hidden;
+    }
+
+    /* Wraps the pane's own two text lines so the row layout above has a
+       single flex item to size next to the chevron, rather than the
+       chevron competing directly with two separately-sized <p> elements
+       for the row's space. min-width: 0 is required for the ellipsis
+       truncation on .pane-dates/.pane-title below to actually take effect
+       inside a flex row: without it, a flex item's default min-width:auto
+       would let this block grow wide enough to fit its own unwrapped text
+       in full, pushing the chevron out past the pane's own edge on a long
+       title instead of truncating the text. */
+    .weekend-pane .pane-text {
+      min-width: 0;
+      flex: 1 1 auto;
+    }
+
+    .weekend-pane .pane-dates,
+    .weekend-pane .pane-title {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .weekend-pane .pane-dates {
+      font-size: clamp(9pt, 2.4vh, 13pt);
+    }
+
+    .weekend-pane .pane-title {
+      font-size: clamp(12pt, 3.2vh, 20pt);
+    }
+
+    /* The expand/collapse affordance for each weekend pane independently:
+       a collapsed pane shows a downward chevron (an invitation to tap and
+       expand, the conventional disclosure-widget visual language), and an
+       expanded pane's own chevron rotates to point up (see
+       .weekend-item.expanded .pane-chevron below), signaling that tapping
+       that same pane again collapses its own event list back, without
+       affecting any other weekend's own state. Added after review found
+       tapping the already-expanded pane a second time, the only way to
+       close its own event list, was not obvious on its own: once
+       expanded, the pane's own blue fill (see .weekend-item.expanded
+       .weekend-pane above) reads as a static header/label rather than a
+       still-active control, the same way a page title does not normally
+       invite a click.
+       A separate, always-visible "back to list" row above the pane was
+       considered instead and rejected: it would cost a whole extra row of
+       height on a short phone screen for a second control toggling the
+       exact same state this one chevron already communicates in place, on
+       the one element the visitor already tapped to get here.
+       color: var(--primary-color), matching the pane's own default border:
+       a collapsed pane's own background is white (see .weekend-pane,
+       .event-pane above), so the chevron reads against white here;
+       .weekend-item.expanded .weekend-pane:not(.past) .pane-chevron above
+       overrides this to white once the pane's own background fills blue,
+       and .weekend-pane.past below overrides it to gray, so the chevron's
+       own color always matches whatever the pane's own background needs
+       for contrast. flex: 0 0 auto keeps the icon at its own fixed size
+       regardless of how much room the text block next to it needs;
+       stroke="currentColor" in the markup below lets this one color drive
+       the chevron's own stroke, the same pattern
+       index-design4-grid.html's own .event-scroll-arrow-down svg icon
+       uses. */
+    .pane-chevron {
+      flex: 0 0 auto;
+      width: 18px;
+      height: 18px;
+      color: var(--primary-color);
+      transition: transform 0.2s ease, color 0.15s ease;
+    }
+
+    .weekend-item.expanded .pane-chevron {
+      transform: rotate(180deg);
+    }
+
+    /* Gray-shades a weekend/event pane whose date (day resolution, not the
+       specific hour) has fully elapsed. Same treatment as every other
+       design in this project: white background kept, border and text set
+       to an explicit, solid gray (#767676, WCAG 2.2-safe against white),
+       legible but secondary; a past pane stays a real, clickable button.
+       A weekend pane's own blue fill when expanded (see
+       .weekend-item.expanded .weekend-pane:not(.past) above) is skipped
+       by that rule's own :not(.past) for exactly this case, so a past
+       weekend reads as past (gray border/text) even while its own events
+       are expanded beneath it; only the chevron's own rotation still
+       signals that expand state for a past pane, per the user's own
+       instruction that a past weekend's blue border must gray out too,
+       taking priority over the "this one is open" fill. */
+    .weekend-pane.past,
+    .event-pane.past {
+      border-color: #767676;
+    }
+
+    .weekend-pane.past .pane-dates,
+    .weekend-pane.past .pane-title,
+    .weekend-pane.past .pane-chevron,
+    .event-pane.past .pane-datetime,
+    .event-pane.past .pane-title,
+    .event-pane.past .pane-venue,
+    .event-pane.past .pane-description {
+      color: #767676;
+    }
+
+    .pane-dates, .pane-datetime {
+      font-size: 11pt;
+      color: var(--muted-color);
+      margin: 0 0 4px 0;
+    }
+
+    .pane-title {
+      font-size: 13pt;
+      font-weight: 600;
+      color: var(--text-color);
+      margin: 0;
+    }
+
+    .pane-venue {
+      font-size: 10pt;
+      color: var(--primary-color);
+      margin: 4px 0 0 0;
+    }
+
+    /* A weekend's own event list, once expanded (see .weekend-item.expanded
+       .event-list below): hidden by default (every weekend's own list
+       exists in the DOM, built once by renderWeekendList() below, the same
+       "build once, toggle visibility" approach index-design4-grid.html's
+       own always-visible columns use, rather than rebuilding this markup
+       on every tap). Unlike index-design4-grid.html's own per-column
+       .event-scroll-column, this list has no overflow/scroll properties of
+       its own: it simply sizes to its own content (flex: 0 0 auto on its
+       own parent .weekend-item, see that rule above), since #weekend-list
+       above is the one shared scrollable region for however many
+       weekends' own event lists happen to be expanded at once (see that
+       rule's own comment for why one shared scrolling region replaced a
+       separate one per weekend). */
+    .event-list {
+      display: none;
+      flex-direction: column;
+      gap: 8px;
+      margin-top: 8px;
+    }
+
+    .weekend-item.expanded .event-list {
+      display: flex;
+    }
+
+    /* flex: 0 0 auto, same as index-design4-grid.html's own event panes:
+       each one simply takes the height its own 4 lines need (see the
+       description line below, this design's own event pane keeps that 4th
+       line index-design4-grid.html drops, since a full-page-width pane has
+       the room index-design4-grid.html's own narrow grid column does not,
+       matching index-design3-banner.html's own reasoning for keeping it). */
+    .event-list .event-pane {
+      flex: 0 0 auto;
+      padding: 10px 16px;
+      overflow: hidden;
+    }
+
+    .event-list .pane-datetime {
+      font-size: clamp(9pt, 2vh, 12pt);
+    }
+
+    .event-list .pane-title {
+      font-size: clamp(10pt, 2.2vh, 14pt);
+    }
+
+    .event-list .pane-venue {
+      font-size: clamp(9pt, 1.8vh, 11pt);
+    }
+
+    .event-list .pane-description {
+      font-size: clamp(8pt, 1.6vh, 10pt);
+      color: var(--muted-color);
+      margin: 4px 0 0 0;
+    }
+
+    .event-list .pane-title,
+    .event-list .pane-venue,
+    .event-list .pane-description {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* Highlights the event pane whose poster is currently open (see
+       openEventPoster() below), cleared when the poster closes. Crimson,
+       not festival blue, so it reads as a distinct "this one is open"
+       state, the same visual language index-design3-banner.html's and
+       index-design4-grid.html's own selected/open event panes use. */
+    .event-pane.open {
+      border-color: var(--crimson);
+      box-shadow: 0 0 0 3px rgba(227, 13, 65, 0.3);
+    }
+
+    .event-placeholder-note {
+      align-self: center;
+      color: var(--muted-color);
+      font-size: 11pt;
+      text-align: center;
+      margin: 12px 0 0 0;
+    }
+
+    /* Fullscreen event poster overlay. Centered, unlike
+       index-design1-slider.html's, index-design3-banner.html's, and
+       index-design4-grid.html's own right-aligned overlay (margin-right:4vw;
+       justify-content:flex-end): those three are landscape designs, where
+       right-aligning leaves the portrait-oriented poster clear of the map
+       or event-list content still visible on the left. This design has no
+       such content beside the poster once it opens (nothing else is
+       visible or interactive behind the overlay's own backdrop), and is
+       itself portrait-first, so centering is the least surprising
+       placement rather than an arbitrary offset to one side. */
+    .poster-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 10000;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      background: rgba(28, 27, 23, 0.65);
+    }
+
+    .poster-overlay.open {
+      display: flex;
+    }
+
+    .poster-frame {
+      position: relative;
+      max-height: 92dvh;
+      max-width: min(90vw, 480px);
+    }
+
+    /* max-width capped at 480px (on top of the 90vw share above), unlike
+       the other three designs' own poster frame: those are landscape and
+       size the frame purely from vw/vh shares of a wide viewport. On a wide
+       desktop window this design's own 90vw alone would stretch a portrait
+       poster far beyond a comfortable reading width; the 480px cap keeps it
+       a sensible printed-poster size on a large monitor while still
+       shrinking below that on a narrow phone, where 90vw is the tighter of
+       the two constraints instead. */
+    .poster-frame img {
+      display: block;
+      max-height: 92dvh;
+      max-width: min(90vw, 480px);
+      width: auto;
+      height: auto;
+      border-radius: 8px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+    }
+
+    .poster-close {
+      position: absolute;
+      top: -18px;
+      right: -18px;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: #ffffff;
+      color: var(--crimson);
+      border: 2px solid var(--crimson);
+      font-size: 24px;
+      line-height: 1;
+      font-weight: bold;
+      cursor: pointer;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+    }
+  </style>
+</head>
+<body>
+  <h1 class="sr-only">Festiwal Młodej Muzyki 2025</h1>
+  <div class="festival-header">
+    <div class="festival-banner"></div>
+  </div>
+  <div class="festival-content">
+    <!-- Built entirely by renderWeekendList() below, from weekendData. -->
+    <div class="weekend-list" id="weekend-list"></div>
+  </div>
+
+  <!-- Fullscreen event poster overlay, opened directly on an event pane's
+       own click, identical mechanism to index-design3-banner.html's and
+       index-design4-grid.html's own overlay (see their own markup
+       comments): there is no map/marker step in between, since this design
+       has no map either. Not part of the .weekend-list flow: it is a plain
+       fixed overlay so the list underneath stays exactly where it was. -->
+  <div class="poster-overlay" id="poster-overlay">
+    <div class="poster-frame">
+      <!-- No src attribute until openPoster() sets one: browsers fetch an
+           <img> as soon as it is parsed even while hidden by CSS, so
+           src="" would otherwise make an unnecessary request for the
+           current page itself, interpreted as a relative empty URL. -->
+      <img id="poster-overlay-image" alt="">
+      <button class="poster-close" id="poster-close" aria-label="Zamknij plakat wydarzenia">&times;</button>
+    </div>
+  </div>
+
+  <script>
+    // Swallow single-finger scroll gestures so the page never scrolls and the
+    // mobile URL bar neither hides nor shows on finger movements. Two-finger
+    // pinch zoom and panning while zoomed in remain available, which WCAG 2.2
+    // success criterion 1.4.4 requires. #weekend-list (see
+    // makeListDraggable() below) calls stopPropagation() on its own
+    // touchmove listener so this handler never sees a gesture that started
+    // inside it, the same pattern index-design4-grid.html's own
+    // per-column touchmove listener uses.
+    document.addEventListener('touchmove', function(event) {
+      if (event.touches.length > 1) return;
+      if (window.visualViewport && window.visualViewport.scale > 1) return;
+      event.preventDefault();
+    }, { passive: false });
+
+    // The same placeholder schedule as index-design3-banner.html and
+    // index-design4-grid.html (see REQUIREMENTS.md's Event schedule
+    // section), including the description field (rendered here, unlike
+    // index-design4-grid.html's own narrower grid columns, see
+    // .event-list .pane-description above) and dropping the
+    // coords field (this design has no map either). Only the Inauguracja
+    // poster is a real, verified individual poster; the other events use
+    // the main festival poster as a generic placeholder, since the real
+    // 2026 poster for each does not exist yet. Weekend 2 has 2 of its 5
+    // real events populated; Weekends 3-4 are left empty, since a couple of
+    // populated weekends are enough to assess this design, and to exercise
+    // the placeholder-note path for the others.
+    const weekendData = [
+      {
+        dates: '4–6 września 2026',
+        title: 'Pamięć i tożsamość',
+        startDate: '2026-09-04',
+        endDate: '2026-09-06',
+        events: [
+          {
+            // Both datetime (the displayed label) and date (used for the
+            // .past gray-shading check) are intentionally kept pointing to
+            // a past January date instead of the real 4 September, so
+            // design reviewers can tell why this one card is gray just by
+            // reading it, without knowing today's real date or needing a
+            // mocked clock. Revert both to the real
+            // 'Piątek, 4 września, 17:00' / '2026-09-04' once no longer
+            // needed for review.
+            datetime: 'Czwartek, 1 stycznia, 17:00',
+            date: '2026-01-01',
+            title: 'Inauguracja Festiwalu: Orkiestra Kameralna Polskiego Radia Amadeus',
+            venue: 'Centrum Kultury Dwór Artusa',
+            description: 'Koncert otwierający festiwal z udziałem Orkiestry Kameralnej Polskiego Radia Amadeus.',
+            poster: '01_inauguracja.png'
+          },
+          {
+            datetime: 'Sobota, 5 września, 17:00',
+            date: '2026-09-05',
+            title: 'Spotkanie z kompozytorką',
+            venue: 'Dom Heleny Grossówny',
+            description: 'Rozmowa o współczesnej muzyce polskiej z zaproszoną kompozytorką.',
+            poster: 'fmm_plakat.png'
+          },
+          {
+            datetime: 'Sobota, 5 września, 20:00',
+            date: '2026-09-05',
+            title: 'Głos Młodych: recital solistów',
+            venue: 'Sala Mieszczańska Ratusza Staromiejskiego',
+            description: 'Recital młodych solistów prezentujących nowy repertuar.',
+            poster: 'fmm_plakat.png'
+          },
+          {
+            datetime: 'Niedziela, 6 września, 17:00',
+            date: '2026-09-06',
+            title: 'Warsztaty kompozytorskie',
+            venue: 'Akademickie Centrum Kultury i Sztuki Od Nowa',
+            description: 'Warsztaty dla młodych twórców prowadzone przez kompozytorów festiwalu.',
+            poster: 'fmm_plakat.png'
+          },
+          {
+            datetime: 'Niedziela, 6 września, 20:00',
+            date: '2026-09-06',
+            title: 'Muzyka dawna: koncert organowy',
+            venue: 'Kościół Akademicki pw. Ducha Świętego w Toruniu',
+            description: 'Koncert muzyki dawnej na organach kościoła akademickiego.',
+            poster: 'fmm_plakat.png'
+          },
+          // Not part of the festival's real placeholder schedule (which
+          // gives Weekend 1 exactly five events): added only so this
+          // weekend's own vertical event scroll can be exercised with a
+          // sixth card.
+          {
+            datetime: 'Niedziela, 6 września, 22:00',
+            date: '2026-09-06',
+            title: 'Dodatkowe wydarzenie testowe (scroll)',
+            venue: 'Centrum Kultury Dwór Artusa',
+            description: 'Karta dodana wyłącznie do przetestowania pionowego przewijania listy wydarzeń.',
+            poster: 'fmm_plakat.png'
+          }
+        ]
+      },
+      {
+        dates: '11–13 września 2026',
+        title: 'Dialog z tradycją',
+        startDate: '2026-09-11',
+        endDate: '2026-09-13',
+        // Only 2 of Weekend 2's 5 real placeholder events are included
+        // here, so the past-date graying can be assessed without leaving
+        // this weekend's list empty.
+        events: [
+          {
+            datetime: 'Piątek, 11 września, 17:00',
+            date: '2026-09-11',
+            title: 'Kaszubskie inspiracje: prawykonania',
+            venue: 'Sala Mieszczańska Ratusza Staromiejskiego',
+            description: 'Prawykonania utworów inspirowanych muzyką ludową Kaszub.',
+            poster: 'fmm_plakat.png'
+          },
+          {
+            datetime: 'Sobota, 12 września, 17:00',
+            date: '2026-09-12',
+            title: 'Wernisaż wystawy "Toruńscy Twórcy"',
+            venue: 'Dom Heleny Grossówny',
+            description: 'Otwarcie wystawy poświęconej toruńskim kompozytorom i wykonawcom.',
+            poster: 'fmm_plakat.png'
+          }
+        ]
+      },
+      { dates: '18–20 września 2026', title: 'Nowe brzmienia (Finał)', startDate: '2026-09-18', endDate: '2026-09-20', events: [] },
+      { dates: '25–27 września 2026', title: 'Weekend Szkoły Muzycznej', startDate: '2026-09-25', endDate: '2026-09-27', events: [] }
+    ];
+
+    /** True once the given day has fully elapsed (day resolution, not the
+     *  specific hour), used to gray-shade past weekend/event panes. This
+     *  design has no getDefaultWeekendIndex()/"current weekend" concept,
+     *  unlike index-design1-slider.html's and index-design3-banner.html's
+     *  own: an earlier version highlighted the current/upcoming weekend
+     *  blue by default, which collided with the also-blue "expanded" state
+     *  (see the "this one is open" fill rule near .weekend-pane above for
+     *  the bug that caused, and this design's own Abandoned ideas in
+     *  README.md); a visitor is left to tell "upcoming" from "past" the
+     *  same way they tell any two weekends apart here, by which ones are
+     *  gray (see .weekend-pane.past above) and which are not. */
+    function isDateFullyPast(isoDate) {
+      const today = new Date();
+      const endOfDay = new Date(isoDate + 'T23:59:59');
+      return today > endOfDay;
+    }
+
+    // The set of weekend indexes currently expanded (their own events
+    // shown beneath their own pane); starts empty. Unlike
+    // index-design1-slider.html's and index-design3-banner.html's own
+    // single, nullable selectedWeekendIndex, this is a Set because any
+    // number of weekends can be expanded at once here (see .weekend-item
+    // above and toggleWeekend() below): an earlier version used a single
+    // nullable index and hid every other weekend's own pane while one was
+    // expanded, reverted after review found a weekend collapsed out of
+    // view with no visible way back to it confusing (see this design's
+    // own Abandoned ideas in README.md).
+    const expandedWeekendIndexes = new Set();
+
+    // The event pane whose poster is currently open, or null; compared by
+    // element reference, the same approach index-design4-grid.html's own
+    // openEventPane uses.
+    let openEventPane = null;
+
+    /** Applies the .past (gray) and .expanded classes to every
+     *  weekend-item/weekend-pane according to the current
+     *  expandedWeekendIndexes. Called after every toggleWeekend(). */
+    function updateWeekendItemStyles() {
+      document.querySelectorAll('.weekend-item').forEach(function(item) {
+        const index = Number(item.dataset.weekendIndex);
+        const pane = item.querySelector('.weekend-pane');
+        item.classList.toggle('expanded', expandedWeekendIndexes.has(index));
+        pane.classList.toggle('past', isDateFullyPast(weekendData[index].endDate));
+      });
+    }
+
+    function updateEventPaneStyles() {
+      document.querySelectorAll('.event-list .event-pane').forEach(function(pane) {
+        pane.classList.toggle('open', pane === openEventPane);
+      });
+    }
+
+    /** Toggles the given weekend's own event list open or closed,
+     *  independently of every other weekend: tapping a collapsed weekend's
+     *  pane reveals its own events beneath it, pushing whatever weekend
+     *  comes after it further down the (scrollable, see #weekend-list
+     *  above) list; tapping an already-expanded weekend's own pane again
+     *  collapses just that weekend's own list back. Every other weekend's
+     *  own expanded/collapsed state is untouched, so any number of
+     *  weekends can be open at once. */
+    function toggleWeekend(weekendIndex) {
+      if (expandedWeekendIndexes.has(weekendIndex)) {
+        expandedWeekendIndexes.delete(weekendIndex);
+      } else {
+        expandedWeekendIndexes.add(weekendIndex);
+      }
+      updateWeekendItemStyles();
+    }
+
+    /** Called directly from an event pane's own click: there is no
+     *  map/marker step in between, since this design has no map, the same
+     *  reasoning index-design3-banner.html's and index-design4-grid.html's
+     *  own openEventPoster() document. */
+    function openEventPoster(pane, event) {
+      openEventPane = pane;
+      updateEventPaneStyles();
+      openPoster(event);
+    }
+
+    function openPoster(event) {
+      const overlay = document.getElementById('poster-overlay');
+      const image = document.getElementById('poster-overlay-image');
+      image.src = event.poster;
+      image.alt = event.title;
+      overlay.classList.add('open');
+    }
+
+    /** Forces the browser to reset any pinch-zoom level back to 1.0,
+     *  without permanently disabling further pinch-zoom. The poster
+     *  overlay is commonly pinch-zoomed into to read the fine print, and
+     *  without this the zoom level otherwise stays applied to the whole
+     *  page once the poster closes. Momentarily adding maximum-scale to
+     *  the viewport meta tag's content is a documented cross-browser way
+     *  to force this reset (works in Safari iOS and Chrome Android).
+     *  Reverting the attribute on the next two animation frames, rather
+     *  than after a fixed timeout, waits for the browser to actually paint
+     *  the reset (one frame is not reliably enough in every browser)
+     *  instead of guessing a delay long enough to cover it. Identical to
+     *  the other three designs' own resetPageZoom(). */
+    function resetPageZoom() {
+      const viewportMeta = document.querySelector('meta[name="viewport"]');
+      const originalContent = viewportMeta.getAttribute('content');
+      viewportMeta.setAttribute('content', originalContent + ', maximum-scale=1.0');
+      requestAnimationFrame(function() {
+        requestAnimationFrame(function() {
+          viewportMeta.setAttribute('content', originalContent);
+        });
+      });
+    }
+
+    /** Closing clears the open-event highlight regardless of which event
+     *  was open, and resets any pinch-zoom applied while the poster was
+     *  open. The expanded/collapsed weekend state is untouched: closing
+     *  the poster returns to whichever weekend's event list was showing,
+     *  not to the 4-pane list. */
+    function closePoster() {
+      document.getElementById('poster-overlay').classList.remove('open');
+      resetPageZoom();
+      openEventPane = null;
+      updateEventPaneStyles();
+    }
+
+    document.getElementById('poster-close').addEventListener('click', closePoster);
+    document.getElementById('poster-overlay').addEventListener('click', function(event) {
+      if (event.target === event.currentTarget) closePoster();
+    });
+    document.addEventListener('keydown', function(event) {
+      if (event.key === 'Escape') closePoster();
+    });
+
+    // A pointer needs to move further than this, in CSS pixels, before a
+    // press-then-release on #weekend-list counts as a scroll/drag rather
+    // than a tap that would otherwise toggle a weekend pane or open an
+    // event pane's poster underneath the pointer. Identical value to
+    // index-design4-grid.html's own DRAG_THRESHOLD_PX; see that design's
+    // own makeColumnDraggable() comment for the full rationale of why
+    // mouse click-and-drag needs this explicit handling while touch scroll
+    // does not.
+    const DRAG_THRESHOLD_PX = 6;
+
+    /** Lets a mouse click-and-drag pan #weekend-list's own vertical scroll,
+     *  and stops that drag from also toggling whichever weekend pane, or
+     *  opening whichever event pane's poster, the pointer happens to be
+     *  released over. The same mechanism index-design4-grid.html's own
+     *  makeColumnDraggable() uses (see that design's own Implementation
+     *  overview in README.md for the full rationale: touch already avoids
+     *  this natively; mouse mousedown/mousemove/mouseup/click do not,
+     *  since click fires purely because mousedown and mouseup targeted the
+     *  same element), applied once here to the whole scrollable list
+     *  instead of once per column, since every weekend-pane and event-pane
+     *  button is a descendant of the one element passed in. */
+    function makeListDraggable(list) {
+      let mouseDown = false;
+      let mouseDragged = false;
+      let mouseStartY = 0;
+      let mouseStartScrollTop = 0;
+
+      list.addEventListener('mousedown', function(event) {
+        mouseDown = true;
+        mouseDragged = false;
+        mouseStartY = event.clientY;
+        mouseStartScrollTop = list.scrollTop;
+        event.preventDefault();
+        list.classList.add('dragging');
+      });
+
+      document.addEventListener('mousemove', function(event) {
+        if (!mouseDown) return;
+        const deltaY = event.clientY - mouseStartY;
+        if (Math.abs(deltaY) > DRAG_THRESHOLD_PX) mouseDragged = true;
+        list.scrollTop = mouseStartScrollTop - deltaY;
+      });
+
+      document.addEventListener('mouseup', function() {
+        mouseDown = false;
+        list.classList.remove('dragging');
+      });
+
+      let touchStartY = 0;
+      let touchDragged = false;
+
+      list.addEventListener('touchstart', function(event) {
+        touchDragged = false;
+        touchStartY = event.touches[0].clientY;
+      }, { passive: true });
+
+      // stopPropagation() here is also what lets #weekend-list's own
+      // native touch scroll (via overflow-y:auto) work at all, despite the
+      // document-level touchmove blocker registered above: without it,
+      // that blocker's preventDefault() would run first and stop the
+      // scroll before the browser ever pans this list.
+      list.addEventListener('touchmove', function(event) {
+        event.stopPropagation();
+        if (Math.abs(event.touches[0].clientY - touchStartY) > DRAG_THRESHOLD_PX) touchDragged = true;
+      }, { passive: true });
+
+      list.addEventListener('click', function(event) {
+        if (mouseDragged || touchDragged) {
+          event.stopPropagation();
+          event.preventDefault();
+        }
+      }, true);
+    }
+
+    /** Builds the whole weekend list from weekendData above, once. Pane
+     *  content comes entirely from that data, not user input, so building
+     *  it with innerHTML carries no injection risk. Every weekend's own
+     *  .event-list is built up front and only shown/hidden by CSS (see
+     *  that rule above), the same "build once, toggle visibility" approach
+     *  index-design4-grid.html's own renderScheduleGrid() uses, rather
+     *  than rebuilding a weekend's event list every time it is expanded. */
+    function renderWeekendList() {
+      const list = document.getElementById('weekend-list');
+      list.innerHTML = '';
+
+      weekendData.forEach(function(weekend, weekendIndex) {
+        const item = document.createElement('div');
+        item.className = 'weekend-item';
+        item.dataset.weekendIndex = String(weekendIndex);
+
+        const weekendPane = document.createElement('button');
+        weekendPane.type = 'button';
+        weekendPane.className = 'weekend-pane';
+        // .pane-text wraps the two text lines so the chevron (see
+        // .pane-chevron above) lays out beside them as a single sibling
+        // flex item, not competing directly with two separately-sized <p>
+        // elements for the pane's own row space.
+        weekendPane.innerHTML =
+          '<div class="pane-text">' +
+          '<p class="pane-dates">' + weekend.dates + '</p>' +
+          '<p class="pane-title">' + weekend.title + '</p>' +
+          '</div>' +
+          '<svg class="pane-chevron" viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 5.5 8 11.5 13.5 5.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+        weekendPane.addEventListener('click', function() {
+          toggleWeekend(weekendIndex);
+        });
+        item.appendChild(weekendPane);
+
+        const eventList = document.createElement('div');
+        eventList.className = 'event-list';
+
+        if (weekend.events.length === 0) {
+          const note = document.createElement('p');
+          note.className = 'event-placeholder-note';
+          note.textContent = 'Wydarzenia tego weekendu zostaną dodane wkrótce.';
+          eventList.appendChild(note);
+        } else {
+          weekend.events.forEach(function(event) {
+            const pane = document.createElement('button');
+            pane.type = 'button';
+            pane.className = 'event-pane';
+            if (isDateFullyPast(event.date)) {
+              pane.classList.add('past');
+            }
+            pane.innerHTML =
+              '<p class="pane-datetime">' + event.datetime + '</p>' +
+              '<p class="pane-title">' + event.title + '</p>' +
+              '<p class="pane-venue">' + event.venue + '</p>' +
+              '<p class="pane-description">' + event.description + '</p>';
+            pane.addEventListener('click', function() {
+              openEventPoster(pane, event);
+            });
+            eventList.appendChild(pane);
+          });
+        }
+
+        item.appendChild(eventList);
+        list.appendChild(item);
+      });
+
+      // Applied once to the whole list, not per weekend: see
+      // makeListDraggable() above for why one shared scrollable/draggable
+      // region replaced index-design4-grid.html's own one-per-column setup.
+      makeListDraggable(list);
+
+      updateWeekendItemStyles();
+    }
+
+    renderWeekendList();
+  </script>
+</body>
+</html>

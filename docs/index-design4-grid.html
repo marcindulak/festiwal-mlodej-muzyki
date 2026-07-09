@@ -1,0 +1,1161 @@
+<!doctype html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <!-- Non-standard hints that nudge some Android browsers toward landscape. -->
+  <meta name="screen-orientation" content="landscape">
+  <meta name="x5-orientation" content="landscape">
+  <!-- Enables fullscreen mode when added to iOS/Android home screen,
+       which is a prerequisite for screen.orientation.lock() on some platforms. -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <title>Festiwal Młodej Muzyki 2025 (Design 4: grid)</title>
+  <link rel="icon" href="data:,">
+
+  <!-- Reveal.js core -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@6.0.1/dist/reset.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@6.0.1/dist/reveal.css">
+
+  <!-- EMBEDDED CSS -->
+  <style>
+    /* Festival white/blue palette, see README.md's Festival color palette table. */
+    :root {
+      --primary-color: #378cbe;
+      --accent-color: #2a6e94;
+      --text-color: #1c1b17;
+      --muted-color: #5a7a8c;
+      --crimson: #e30d41;
+    }
+
+    html, body {
+      overscroll-behavior: none;
+    }
+
+    html {
+      height: 100dvh;
+    }
+
+    /* Fix the body to the viewport so the document itself can never
+       scroll. A page that cannot scroll gives mobile browsers no reason to
+       collapse or expand the URL bar on finger movements, which keeps the
+       viewport size stable. The rule is inert on desktop because the content
+       already fits the viewport, so the same code serves every platform. */
+    body {
+      position: fixed;
+      inset: 0;
+      overflow: hidden;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    /* White background applied at every layer Reveal.js uses, because
+       backgroundColor in Reveal.initialize only sets an inline style on
+       .reveal-viewport after JS runs, which reveal.css may temporarily
+       override, and .slide-background elements are separate. */
+    body,
+    .reveal-viewport,
+    .reveal .slide-background {
+      background-color: #ffffff;
+    }
+
+    .reveal {
+      font-family: "Source Sans Pro", Helvetica, sans-serif;
+      font-size: 32px;
+      color: var(--text-color);
+    }
+
+    .reveal h1, .reveal h2 {
+      font-family: "Source Sans Pro", Helvetica, sans-serif;
+      text-transform: none;
+      color: var(--text-color);
+      font-weight: 600;
+      line-height: 1.2;
+    }
+
+    .reveal a {
+      color: var(--primary-color);
+      text-decoration: underline;
+    }
+
+    .reveal a:hover {
+      color: var(--accent-color);
+    }
+
+    .reveal .slides section {
+      width: 100%;
+      height: 100%;
+      padding: 60px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    /* This design has a single slide: the banner header, then a grid of
+       four weekend columns, the same disableLayout/!important mechanism as
+       index-design1-slider.html (see README.md's Implementation overview
+       for the full explanation of why display:flex needs !important here).
+       Unlike index-design3-banner.html, this design's own .schedule-grid
+       below is flex:1 1 auto: it fills whatever height the header leaves,
+       the same flex slot #map holds in index-design1-slider.html, rather
+       than sizing to its own content and centering as design3's final
+       version does. This design does not need design3's centering: every
+       weekend's events render as one always-visible grid of independently
+       scrollable columns (see .schedule-grid below), so a tall window
+       shows more of each column's own events instead of leaving blank
+       space, and a short window scrolls each column's own overflow
+       internally rather than needing the whole page to fit without
+       scrolling the way design3's compact, non-scrolling card block does. */
+    .festival-slide {
+      padding: 0 !important;
+      position: relative;
+      overflow: hidden;
+      display: flex !important;
+      flex-direction: column;
+      justify-content: flex-start;
+    }
+
+    /* fmm_banner.png as the header's own background, reusing
+       index-design3-banner.html's own tuned pre-scale crop and
+       background-position (see that design's own Implementation overview
+       for the full rationale: the aspect-ratio value, why it is cropped
+       5%/10% off the top/bottom before being computed, and the
+       background-position percentage that selects the intended offset).
+       max-height: 40vh, not that design's own 55vh: this design's header
+       shares the viewport with the schedule grid below it, which needs
+       real vertical room for its own scrollable columns to be useful (a
+       column that can only show one or two events before scrolling
+       defeats the point of a schedule overview), unlike
+       index-design3-banner.html, where nothing below the header needs
+       that space since its own content sizes to itself and centers in
+       whatever is left. A smaller ceiling here leaves more of a tall
+       window's height to the grid instead of the banner. */
+    .festival-header {
+      flex: 0 0 auto;
+      padding: 0 24px;
+    }
+
+    .festival-banner {
+      width: 100%;
+      aspect-ratio: 1160 / 214.2;
+      max-height: 40vh;
+      background-image: url('fmm_banner.png');
+      background-size: 100% auto;
+      background-position: center 33.33%;
+      background-color: #ffffff;
+    }
+
+    /* Visually hidden but still reachable by screen readers: WCAG 2.2
+       expects a page to have a real heading, but the banner's own
+       wordmark (see .festival-header above) already shows the title to a
+       sighted visitor, so this is not also rendered on screen. Standard
+       clip-to-1px technique (not display:none, which assistive
+       technology skips entirely). */
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+
+    /* Four weekend columns side by side, in the vertical space the map
+       used to occupy in index-design1-slider.html. flex:1 1 auto fills
+       that remaining space (see .festival-slide above for why this design
+       stretches here rather than sizing to content the way
+       index-design3-banner.html's final version does); min-height:0 lets
+       it shrink below its children's natural content size when needed,
+       since each child column scrolls its own overflow internally instead
+       of growing this row past the viewport. */
+    .schedule-grid {
+      flex: 1 1 auto;
+      min-height: 0;
+      display: flex;
+      flex-direction: row;
+      gap: 8px;
+      padding: 8px 24px 12px 24px;
+      overflow: hidden;
+    }
+
+    /* One weekend's own column: its (non-interactive, see .weekend-pane
+       below) header pane, then its own independently vertically-scrolling
+       event list. flex:1 1 0, matching index-design3-banner.html's own
+       .weekend-row .weekend-pane sizing, so all four columns share the
+       grid's width equally regardless of how long a title or how many
+       events each one has. min-height:0 is required for the same reason
+       as .schedule-grid above: without it, a flex column's default
+       min-height:auto would let this column's own content (specifically
+       .event-column-wrapper below) refuse to shrink below its natural
+       height, pushing the column taller than the grid and defeating the
+       internal scroll this design relies on instead of a taller page. */
+    .schedule-column {
+      flex: 1 1 0;
+      min-width: 0;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Shared card look for both the (non-interactive) weekend-pane header
+       and the (clickable) event panes below it: white with a festival
+       blue border, the same visual language index-design1-slider.html and
+       index-design3-banner.html both use. Interactivity-specific
+       properties (cursor, hover lift) live on .event-pane alone below,
+       not here, since .weekend-pane is a plain <div> in this design (see
+       its own comment below for why), not a <button>, and giving it a
+       pointer cursor or a hover lift would advertise an interaction that
+       does not exist. */
+    .weekend-pane, .event-pane {
+      display: block;
+      background-color: #ffffff;
+      border: 2px solid var(--primary-color);
+      border-radius: 8px;
+      text-align: left;
+      font-family: inherit;
+    }
+
+    .event-pane {
+      cursor: pointer;
+      transition: transform 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
+    }
+
+    .event-pane:hover {
+      background-color: #eef7fb;
+      box-shadow: 0 4px 12px rgba(55, 140, 190, 0.3);
+      transform: translateY(-2px);
+    }
+
+    /* A plain <div>, not a <button>: in index-design1-slider.html and
+       index-design3-banner.html, clicking a weekend pane selects it and
+       rebuilds the event list below it. This design shows every weekend's
+       events at once, side by side, so there is nothing left for a click
+       to do; a clickable-looking element that does nothing on activation
+       would violate the principle of least astonishment. The past-date
+       graying below (see .weekend-pane.past) is kept as a purely
+       informational cue; the "currently running or next upcoming"
+       highlight those two designs also give one weekend pane is dropped
+       here (see this design's own Abandoned ideas in README.md): with
+       every weekend already visible at once, that highlight no longer
+       marked "the one currently selected/shown," its only real meaning in
+       those two designs, and reviewing it as pure decoration read as an
+       arbitrary emphasis on one of four otherwise-equal columns instead. */
+    .weekend-pane {
+      flex: 0 0 auto;
+      min-width: 0;
+      padding: 4px 6px;
+      text-align: center;
+      overflow: hidden;
+    }
+
+    /* Single line each, shrinking via clamp() on the narrowest phones
+       instead of wrapping to a second line, the same approach
+       index-design1-slider.html and index-design3-banner.html both use
+       for the same reason: wrapping was measured to add far more height
+       than the column has to spare. white-space nowrap is safe here
+       because both strings are short and fixed (a date range, a
+       two/three-word title). */
+    .weekend-pane .pane-dates,
+    .weekend-pane .pane-title {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .weekend-pane .pane-dates {
+      font-size: clamp(7pt, 1.6vh, 11pt);
+    }
+
+    .weekend-pane .pane-title {
+      font-size: clamp(8pt, 1.9vh, 13pt);
+    }
+
+    /* Gray-shades a weekend/event pane whose date (day resolution, not the
+       specific hour) has fully elapsed. Same treatment as
+       index-design1-slider.html and index-design3-banner.html: white
+       background kept (blends in like any other pane), border and text
+       set to an explicit, solid gray (#767676, WCAG 2.2-safe against
+       white), so it reads as legible but secondary; an event pane stays a
+       real, clickable button even when past, this is a visual cue only. */
+    .weekend-pane.past,
+    .event-pane.past {
+      border-color: #767676;
+    }
+
+    .weekend-pane.past .pane-dates,
+    .weekend-pane.past .pane-title,
+    .event-pane.past .pane-datetime,
+    .event-pane.past .pane-title,
+    .event-pane.past .pane-venue {
+      color: #767676;
+    }
+
+    .pane-dates, .pane-datetime {
+      font-size: 11pt;
+      color: var(--muted-color);
+      margin: 0 0 4px 0;
+    }
+
+    .pane-title {
+      font-size: 13pt;
+      font-weight: 600;
+      color: var(--text-color);
+      margin: 0;
+    }
+
+    .pane-venue {
+      font-size: 10pt;
+      color: var(--primary-color);
+      margin: 4px 0 0 0;
+    }
+
+    /* Holds a column's own scrollable event list and its down-scroll
+       arrow, stacked vertically. flex:1 1 auto fills whatever height
+       .weekend-pane above leaves within the column; min-height:0 is the
+       same requirement as .schedule-column above, needed again here since
+       this element is itself a flex container whose own child
+       (.event-scroll-column below) needs the freedom to shrink below its
+       natural content height so it scrolls instead of growing the page. */
+    .event-column-wrapper {
+      flex: 1 1 auto;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      margin-top: 8px;
+    }
+
+    /* The vertically-scrolling event list itself. overflow-y:auto with no
+       JS panning gives finger-swipe scrolling on touch for free, the same
+       as index-design1-slider.html's and index-design3-banner.html's own
+       horizontal event rows; mouse-drag scrolling (see makeColumnDraggable()
+       below) is added on top for desktop, since overflow-y:auto alone only
+       responds to a mouse wheel or a scrollbar drag, not a plain
+       click-and-drag on the content itself, and the design brief calls for
+       "scrollable with mouse or finger". cursor:grab hints that the
+       click-and-drag affordance exists; user-select:none stops a drag from
+       also starting a text-selection, the default browser behavior a
+       click-and-drag on ordinary content would otherwise trigger.
+       No wheel-blocking here, unlike index-design3-banner.html's own
+       horizontal event row: that design intercepts wheel events because a
+       vertical mouse wheel does not naturally scroll a horizontal row, so
+       it converts wheel input into an explicit arrow-only affordance
+       instead. This column scrolls vertically, the same axis a mouse
+       wheel already scrolls by default with zero extra code, so no
+       interception is needed or wanted here. */
+    .event-scroll-column {
+      flex: 1 1 auto;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      padding: 2px;
+      overflow-y: auto;
+      overflow-x: hidden;
+      -webkit-overflow-scrolling: touch;
+      cursor: grab;
+      user-select: none;
+      /* Firefox: hides the native scrollbar. The down arrow below is the
+         only explicit scroll affordance shown; native scrollbars render
+         inconsistently across mobile browsers. */
+      scrollbar-width: none;
+    }
+
+    .event-scroll-column.dragging {
+      cursor: grabbing;
+    }
+
+    /* Chrome/Safari/most mobile WebViews: same scrollbar-hiding intent as
+       scrollbar-width above, via the vendor-prefixed pseudo-element these
+       engines use instead. */
+    .event-scroll-column::-webkit-scrollbar {
+      display: none;
+    }
+
+    /* flex:0 0 auto (not stretched to fill the column, unlike
+       index-design3-banner.html's own horizontal cards, which are
+       stretched by align-items:stretch to match their row's tallest
+       neighbor): a vertical stack has no equivalent reason to equalize
+       every card's height, each one simply takes the height its own 3
+       lines need. 4px vertical padding matches .weekend-pane's own, the
+       same reasoning index-design3-banner.html documents for its own
+       event panes: the two pane types read as the same card family, and
+       neither spends more of a short screen's height on padding than the
+       other. Horizontal padding is smaller than that design's own 12px
+       (8px here), since a column is far narrower than that design's
+       fixed 200px card. */
+    .event-scroll-column .event-pane {
+      flex: 0 0 auto;
+      padding: 4px 8px;
+      overflow: hidden;
+    }
+
+    /* Same clamp() sizing family as the weekend panes above and as
+       index-design3-banner.html's own event panes, not a different scale,
+       so every pane in this design reads as one consistent type family.
+       No description line here (contrast index-design3-banner.html's own
+       .event-scroll-row .pane-description): a column is far narrower than
+       that design's fixed-width card, and the design brief calls for
+       dropping the description specifically because of that; the field
+       stays in weekendData below for a possible future use, just is not
+       rendered here, the same treatment index-design1-slider.html's own
+       event panes already give it. */
+    .event-scroll-column .pane-datetime {
+      font-size: clamp(7pt, 1.6vh, 11pt);
+    }
+
+    .event-scroll-column .pane-title {
+      font-size: clamp(7pt, 1.6vh, 11pt);
+    }
+
+    .event-scroll-column .pane-venue {
+      font-size: clamp(6.5pt, 1.4vh, 10pt);
+    }
+
+    /* Title and venue truncate to a single line with an ellipsis, the same
+       treatment the weekend panes and index-design3-banner.html's own
+       event panes already use, rather than wrapping to a second line: a
+       column here is narrower than that design's own fixed-width card, so
+       wrapping would cost even more height per card than it would have
+       cost there. datetime is deliberately not included in this list, the
+       same choice index-design1-slider.html and index-design3-banner.html
+       both make for their own event panes: a datetime string is allowed
+       to wrap to a second line on the narrowest columns rather than
+       truncate, since losing part of a date/time is worse than a
+       two-line row. */
+    .event-scroll-column .pane-title,
+    .event-scroll-column .pane-venue {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* Highlights the event pane whose poster is currently open (see
+       openEventPoster() below), cleared when the poster closes. Crimson,
+       not festival blue, so it reads as a distinct "this one is open"
+       state rather than another selectable-but-inactive pane, the same
+       visual language index-design3-banner.html uses for the same
+       purpose. Queried across every column by a shared class (see
+       updateEventPaneStyles() below), not scoped to one row's id the way
+       that design's single selected weekend's row was, since this design
+       shows every weekend's events, across four separate columns, at
+       once. */
+    .event-pane.open {
+      border-color: var(--crimson);
+      box-shadow: 0 0 0 3px rgba(227, 13, 65, 0.3);
+    }
+
+    .event-placeholder-note {
+      align-self: center;
+      color: var(--muted-color);
+      font-size: 11pt;
+      text-align: center;
+      margin: 0;
+    }
+
+    /* Down-scroll arrow, shown only while its own column has more events
+       below the visible area (see updateColumnScrollArrow() below): the
+       vertical equivalent of index-design3-banner.html's own left/right
+       .event-scroll-arrow buttons, styled the same way (a filled circle,
+       28px, close to the WCAG 2.2 24x24 CSS px minimum target size) but
+       only a single arrow, since a column starts scrolled to its own top
+       already and only ever needs to advertise more content below it, not
+       above it. align-self:center (not stretched full column width) and
+       flex:0 0 auto keep it at its own fixed size, centered under the
+       scrollable list above it. */
+    .event-scroll-arrow-down {
+      align-self: center;
+      flex: 0 0 auto;
+      margin-top: 4px;
+      width: 28px;
+      height: 28px;
+      padding: 0;
+      border-radius: 50%;
+      border: 2px solid var(--primary-color);
+      background-color: rgba(255, 255, 255, 0.92);
+      color: var(--primary-color);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+      transition: background-color 0.15s ease;
+    }
+
+    .event-scroll-arrow-down:hover {
+      background-color: #eef7fb;
+    }
+
+    .event-scroll-arrow-down svg {
+      width: 14px;
+      height: 14px;
+    }
+
+    /* Hidden, not just visually disabled, once its own column has no
+       further room to scroll down (see updateColumnScrollArrow() below):
+       the same reasoning index-design3-banner.html documents for its own
+       arrows, an arrow that is always present but inert would invite a
+       tap that visibly does nothing. Also hidden entirely for a weekend
+       with no events yet (the placeholder-note case, which has nothing to
+       scroll to). */
+    .event-scroll-arrow-down.hidden {
+      display: none;
+    }
+
+    /* Portrait overlay — shown via @media below; hidden by default.
+       Uses the festival's own white/black/blue palette, independent of the
+       --primary-color etc. custom properties above. */
+    #portrait-warning {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background-color: #ffffff;
+      z-index: 9999;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 16px;
+      text-align: center;
+      padding: 40px;
+      font-family: "Source Sans Pro", Helvetica, sans-serif;
+    }
+
+    .festival-poster {
+      position: relative;
+      width: 100%;
+      max-width: 280px;
+      display: block;
+      overflow: hidden;
+    }
+
+    .festival-poster img {
+      display: block;
+      width: 100%;
+      height: auto;
+      border-radius: 0 0 8px 8px;
+      transform: scale(1.15);
+      transform-origin: center 20%;
+    }
+
+    .rotate-cta {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      gap: 16px;
+    }
+
+    #portrait-warning .rotate-icon {
+      width: 24px;
+      height: auto;
+      transform-origin: 50% 50%;
+      animation: hint-rotate 2.25s ease-in-out infinite;
+    }
+
+    @keyframes hint-rotate {
+      0%, 100% { transform: rotate(0deg); }
+      50%       { transform: rotate(30deg); }
+    }
+
+    .festival-wave-divider {
+      width: 100%;
+      max-width: 280px;
+      height: 20px;
+      display: block;
+      transform: scaleY(-1);
+    }
+
+    #portrait-warning p {
+      color: #004878;
+      font-size: 14pt;
+      white-space: nowrap;
+      margin: 0;
+    }
+
+    /* On small portrait screens, show the overlay and hide the presentation. */
+    @media screen and (orientation: portrait) {
+      #portrait-warning { display: flex; }
+      .reveal          { display: none; }
+    }
+
+    /* Fullscreen event poster overlay. Positioned toward the right edge of
+       the screen because the source posters are portrait-oriented and the
+       presentation is landscape; a future clean/landscape poster would not
+       need this. Identical to index-design3-banner.html's own overlay. */
+    .poster-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 10000;
+      display: none;
+      align-items: center;
+      justify-content: flex-end;
+      background: rgba(28, 27, 23, 0.65);
+    }
+
+    .poster-overlay.open {
+      display: flex;
+    }
+
+    .poster-frame {
+      position: relative;
+      margin-right: 4vw;
+      max-height: 92dvh;
+      max-width: 55vw;
+    }
+
+    .poster-frame img {
+      display: block;
+      max-height: 92dvh;
+      max-width: 55vw;
+      border-radius: 8px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+    }
+
+    .poster-close {
+      position: absolute;
+      top: -18px;
+      right: -18px;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: #ffffff;
+      color: var(--crimson);
+      border: 2px solid var(--crimson);
+      font-size: 24px;
+      line-height: 1;
+      font-weight: bold;
+      cursor: pointer;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+    }
+  </style>
+</head>
+<body>
+  <!-- Portrait landing card asking the visitor to rotate to landscape,
+       showing the festival's own poster. Unchanged from
+       index-design1-slider.html and index-design3-banner.html: this
+       design is landscape too, per README.md's Multiple candidate designs
+       section. -->
+  <div id="portrait-warning">
+    <svg class="festival-wave-divider" viewBox="0 0 300 20" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none" aria-hidden="true">
+      <path d="M0,10 Q37.5,0 75,10 T150,10 T225,10 T300,10 V20 H0 Z" fill="#9be6fa"/>
+    </svg>
+    <div class="festival-poster">
+      <img src="fmm_plakat.png" alt="Festiwal Młodej Muzyki">
+    </div>
+    <div class="rotate-cta">
+      <p>Obróć urządzenie poziomo</p>
+      <svg class="rotate-icon" viewBox="0 13 173 530" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <circle cx="86" cy="20" r="7" fill="#1c1b17"/>
+        <line x1="64" y1="52" x2="86" y2="57" stroke="#1c1b17" stroke-width="5" stroke-linecap="round"/>
+        <line x1="110" y1="52" x2="86" y2="57" stroke="#1c1b17" stroke-width="5" stroke-linecap="round"/>
+        <line x1="64" y1="65" x2="86" y2="60" stroke="#1c1b17" stroke-width="5" stroke-linecap="round"/>
+        <line x1="110" y1="65" x2="86" y2="60" stroke="#1c1b17" stroke-width="5" stroke-linecap="round"/>
+        <rect x="80" y="60" width="13" height="105" fill="#1c1b17"/>
+        <path d="M93,160 C120,168 135,178 135,185 C140,195 142,200 142,208 C140,222 126,230 124,242 C122,258 138,290 146,300 C152,320 156,350 156,362 C156,378 152,386 148,392 C130,415 100,428 84,436 L80,300 L80,190 L80,160 Z" fill="#1c1b17"/>
+        <g fill="#1c1b17">
+          <rect x="16" y="155" width="69" height="30"/>
+          <rect x="16" y="189" width="69" height="26"/>
+          <rect x="20" y="251" width="65" height="30"/>
+          <rect x="18" y="283" width="67" height="28"/>
+          <rect x="18" y="341" width="67" height="28"/>
+          <rect x="16" y="377" width="69" height="24"/>
+        </g>
+      </svg>
+    </div>
+  </div>
+
+  <div class="reveal">
+    <div class="slides">
+      <!-- The whole presentation is one slide: the banner header, then the
+           four-column schedule grid, built entirely by renderScheduleGrid()
+           below. Only Weekend 1 has real event/venue data; Weekends 2-4
+           show a placeholder note (see weekendData below) so the
+           past-date graying can still be assessed for all four before the
+           real 2026 programme is published. -->
+      <section id="festival-slide" class="festival-slide">
+        <div class="festival-header">
+          <h1 class="sr-only">Festiwal Młodej Muzyki 2025</h1>
+          <div class="festival-banner"></div>
+        </div>
+        <div class="schedule-grid" id="schedule-grid"></div>
+      </section>
+    </div>
+  </div>
+
+  <!-- Fullscreen event poster overlay, shown directly on an event pane's own
+       click, identical to index-design3-banner.html's own overlay and
+       markup: there is no map/marker step in between, since this design
+       has no map either. Not a reveal.js slide: it is a plain overlay so
+       the grid underneath stays exactly where it was. -->
+  <div class="poster-overlay" id="poster-overlay">
+    <div class="poster-frame">
+      <!-- No src attribute until openPoster() sets one: browsers fetch an
+           <img> as soon as it is parsed even while hidden by CSS, so
+           src="" would otherwise make an unnecessary request for the
+           current page itself, interpreted as a relative empty URL. -->
+      <img id="poster-overlay-image" alt="">
+      <button class="poster-close" id="poster-close" aria-label="Zamknij plakat wydarzenia">&times;</button>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/reveal.js@6.0.1/dist/reveal.js"></script>
+  <script>
+    // Force the html element height to exactly the current visible
+    // viewport height before Reveal.initialize() reads it for scale calculation.
+    // dvh CSS is ignored on older mobile browsers; this JS approach works universally.
+    function syncViewportHeight() {
+      document.documentElement.style.height = window.innerHeight + 'px';
+    }
+    syncViewportHeight();
+    window.addEventListener('resize', syncViewportHeight);
+
+    // Swallow single-finger scroll gestures so the page never scrolls and the
+    // mobile URL bar neither hides nor shows on finger movements. Two-finger
+    // pinch zoom and panning while zoomed in remain available, which WCAG 2.2
+    // success criterion 1.4.4 requires. Each column's own touchmove listener
+    // (attached in renderScheduleGrid() below) calls stopPropagation() so
+    // this handler never sees a gesture that started inside a scrollable
+    // column, the same pattern index-design3-banner.html uses for its own
+    // horizontal event row.
+    document.addEventListener('touchmove', function(event) {
+      if (event.touches.length > 1) return;
+      if (window.visualViewport && window.visualViewport.scale > 1) return;
+      event.preventDefault();
+    }, { passive: false });
+
+    // disableLayout: true opts out of Reveal's default behavior of scaling
+    // a fixed-aspect-ratio virtual canvas (1280x720) to fit the viewport,
+    // the same reasoning as index-design1-slider.html and
+    // index-design3-banner.html: with it, the slide covers 100% of the
+    // real viewport and this file's own flex/vh-based CSS governs sizing,
+    // matching every aspect ratio instead of one assumed one.
+    Reveal.initialize({
+      backgroundColor: '#ffffff',
+      disableLayout: true,
+      controls: false,
+      progress: false,
+      hash: false
+    });
+
+    // The same placeholder schedule as index-design3-banner.html (see
+    // REQUIREMENTS.md's Event schedule section), including that design's
+    // own dropped coords field (this design has no map either) and its
+    // own description field, which stays in the data but, like
+    // index-design1-slider.html's own event panes, is not rendered here
+    // (see .event-scroll-column .pane-title etc. above for why: a grid
+    // column is narrower than a design with the room to show it). Only
+    // the Inauguracja poster is a real, verified individual poster; the
+    // other events use the main festival poster as a generic placeholder,
+    // since the real 2026 poster for each does not exist yet. Weekend 2
+    // has 2 of its 5 real events populated; Weekends 3-4 are left empty,
+    // since a couple of populated weekends are enough to assess this
+    // design, and to exercise the placeholder-note path for the others.
+    const weekendData = [
+      {
+        dates: '4–6 września 2026',
+        title: 'Pamięć i tożsamość',
+        startDate: '2026-09-04',
+        endDate: '2026-09-06',
+        events: [
+          {
+            // Both datetime (the displayed label) and date (used for the
+            // .past gray-shading check) are intentionally kept pointing to
+            // a past January date instead of the real 4 September, so
+            // design reviewers can tell why this one card is gray just by
+            // reading it, without knowing today's real date or needing a
+            // mocked clock. Revert both to the real
+            // 'Piątek, 4 września, 17:00' / '2026-09-04' once no longer
+            // needed for review.
+            datetime: 'Czwartek, 1 stycznia, 17:00',
+            date: '2026-01-01',
+            title: 'Inauguracja Festiwalu: Orkiestra Kameralna Polskiego Radia Amadeus',
+            venue: 'Centrum Kultury Dwór Artusa',
+            description: 'Koncert otwierający festiwal z udziałem Orkiestry Kameralnej Polskiego Radia Amadeus.',
+            poster: '01_inauguracja.png'
+          },
+          {
+            datetime: 'Sobota, 5 września, 17:00',
+            date: '2026-09-05',
+            title: 'Spotkanie z kompozytorką',
+            venue: 'Dom Heleny Grossówny',
+            description: 'Rozmowa o współczesnej muzyce polskiej z zaproszoną kompozytorką.',
+            poster: 'fmm_plakat.png'
+          },
+          {
+            datetime: 'Sobota, 5 września, 20:00',
+            date: '2026-09-05',
+            title: 'Głos Młodych: recital solistów',
+            venue: 'Sala Mieszczańska Ratusza Staromiejskiego',
+            description: 'Recital młodych solistów prezentujących nowy repertuar.',
+            poster: 'fmm_plakat.png'
+          },
+          {
+            datetime: 'Niedziela, 6 września, 17:00',
+            date: '2026-09-06',
+            title: 'Warsztaty kompozytorskie',
+            venue: 'Akademickie Centrum Kultury i Sztuki Od Nowa',
+            description: 'Warsztaty dla młodych twórców prowadzone przez kompozytorów festiwalu.',
+            poster: 'fmm_plakat.png'
+          },
+          {
+            datetime: 'Niedziela, 6 września, 20:00',
+            date: '2026-09-06',
+            title: 'Muzyka dawna: koncert organowy',
+            venue: 'Kościół Akademicki pw. Ducha Świętego w Toruniu',
+            description: 'Koncert muzyki dawnej na organach kościoła akademickiego.',
+            poster: 'fmm_plakat.png'
+          },
+          // Not part of the festival's real placeholder schedule (which
+          // gives Weekend 1 exactly five events): added only so this
+          // column's own vertical scroll can be exercised with a sixth
+          // card.
+          {
+            datetime: 'Niedziela, 6 września, 22:00',
+            date: '2026-09-06',
+            title: 'Dodatkowe wydarzenie testowe (scroll)',
+            venue: 'Centrum Kultury Dwór Artusa',
+            description: 'Karta dodana wyłącznie do przetestowania pionowego przewijania listy wydarzeń.',
+            poster: 'fmm_plakat.png'
+          }
+        ]
+      },
+      {
+        dates: '11–13 września 2026',
+        title: 'Dialog z tradycją',
+        startDate: '2026-09-11',
+        endDate: '2026-09-13',
+        // Only 2 of Weekend 2's 5 real placeholder events are included
+        // here, so the past-date graying can be assessed without leaving
+        // this weekend's column empty.
+        events: [
+          {
+            datetime: 'Piątek, 11 września, 17:00',
+            date: '2026-09-11',
+            title: 'Kaszubskie inspiracje: prawykonania',
+            venue: 'Sala Mieszczańska Ratusza Staromiejskiego',
+            description: 'Prawykonania utworów inspirowanych muzyką ludową Kaszub.',
+            poster: 'fmm_plakat.png'
+          },
+          {
+            datetime: 'Sobota, 12 września, 17:00',
+            date: '2026-09-12',
+            title: 'Wernisaż wystawy "Toruńscy Twórcy"',
+            venue: 'Dom Heleny Grossówny',
+            description: 'Otwarcie wystawy poświęconej toruńskim kompozytorom i wykonawcom.',
+            poster: 'fmm_plakat.png'
+          }
+        ]
+      },
+      { dates: '18–20 września 2026', title: 'Nowe brzmienia (Finał)', startDate: '2026-09-18', endDate: '2026-09-20', events: [] },
+      { dates: '25–27 września 2026', title: 'Weekend Szkoły Muzycznej', startDate: '2026-09-25', endDate: '2026-09-27', events: [] }
+    ];
+
+    /** True once the given day has fully elapsed (day resolution, not the
+     *  specific hour of a weekend's last day or an individual event),
+     *  used to gray-shade past weekend/event panes. */
+    function isDateFullyPast(isoDate) {
+      const today = new Date();
+      const endOfDay = new Date(isoDate + 'T23:59:59');
+      return today > endOfDay;
+    }
+
+    // The event pane whose poster is currently open, or null; compared by
+    // element reference rather than an index, since events now live across
+    // four separate columns instead of one row, so a single (weekendIndex,
+    // eventIndex) pair would need to be combined with which column it came
+    // from anyway.
+    let openEventPane = null;
+
+    function updateEventPaneStyles() {
+      document.querySelectorAll('.schedule-grid .event-pane').forEach(function(pane) {
+        pane.classList.toggle('open', pane === openEventPane);
+      });
+    }
+
+    /** Called directly from an event pane's own click: unlike
+     *  index-design1-slider.html, there is no map/marker step in between,
+     *  since this design has no map (see the design brief in README.md's
+     *  Multiple candidate designs section). Marks the pane open (the same
+     *  crimson highlight index-design3-banner.html uses for the same
+     *  purpose) and opens its poster. Not called at all if the click
+     *  followed a drag/swipe past the threshold makeColumnDraggable()
+     *  tracks below, which is what stops scrolling a column from
+     *  accidentally opening whichever card the pointer happened to be
+     *  released over. */
+    function openEventPoster(pane, event) {
+      openEventPane = pane;
+      updateEventPaneStyles();
+      openPoster(event);
+    }
+
+    function openPoster(event) {
+      const overlay = document.getElementById('poster-overlay');
+      const image = document.getElementById('poster-overlay-image');
+      image.src = event.poster;
+      image.alt = event.title;
+      overlay.classList.add('open');
+    }
+
+    /** Forces the browser to reset any pinch-zoom level back to 1.0,
+     *  without permanently disabling further pinch-zoom. The poster
+     *  overlay is commonly pinch-zoomed into to read the fine print, and
+     *  without this the zoom level otherwise stays applied to the whole
+     *  page once the poster closes. Momentarily adding maximum-scale to
+     *  the viewport meta tag's content is a documented cross-browser way
+     *  to force this reset (works in Safari iOS and Chrome Android).
+     *  Reverting the attribute on the next two animation frames, rather
+     *  than after a fixed timeout, waits for the browser to actually
+     *  paint the reset (one frame is not reliably enough in every
+     *  browser) instead of guessing a delay long enough to cover it. */
+    function resetPageZoom() {
+      const viewportMeta = document.querySelector('meta[name="viewport"]');
+      const originalContent = viewportMeta.getAttribute('content');
+      viewportMeta.setAttribute('content', originalContent + ', maximum-scale=1.0');
+      requestAnimationFrame(function() {
+        requestAnimationFrame(function() {
+          viewportMeta.setAttribute('content', originalContent);
+        });
+      });
+    }
+
+    /** Closing clears the open-event highlight (see openEventPoster()
+     *  above) regardless of which event was open, and resets any
+     *  pinch-zoom applied while the poster was open. */
+    function closePoster() {
+      document.getElementById('poster-overlay').classList.remove('open');
+      resetPageZoom();
+      openEventPane = null;
+      updateEventPaneStyles();
+    }
+
+    document.getElementById('poster-close').addEventListener('click', closePoster);
+    document.getElementById('poster-overlay').addEventListener('click', function(event) {
+      if (event.target === event.currentTarget) closePoster();
+    });
+    document.addEventListener('keydown', function(event) {
+      if (event.key === 'Escape') closePoster();
+    });
+
+    /** Scrolls a column down by roughly one screenful of its own visible
+     *  height, smoothly, mirroring index-design3-banner.html's own
+     *  scrollEventRow() but vertical and one-directional (see
+     *  .event-scroll-arrow-down above for why only a down arrow exists). */
+    function scrollColumnDown(scrollColumn) {
+      scrollColumn.scrollBy({ top: scrollColumn.clientHeight * 0.8, behavior: 'smooth' });
+    }
+
+    /** Shows/hides a column's down arrow to match how much further it can
+     *  still scroll. Hidden rather than merely disabled once at the
+     *  bottom (see .event-scroll-arrow-down.hidden above), and hidden
+     *  entirely when a column has no events yet (the placeholder-note
+     *  case, which has nothing to scroll to). A 1px tolerance absorbs the
+     *  sub-pixel scrollTop values some browsers report at the exact
+     *  start/end of a scrollable element, the same tolerance
+     *  index-design3-banner.html's own updateEventScrollArrows() uses. */
+    function updateColumnScrollArrow(scrollColumn, downArrow) {
+      const canScroll = scrollColumn.scrollHeight > scrollColumn.clientHeight + 1;
+      const atBottom = scrollColumn.scrollTop + scrollColumn.clientHeight >= scrollColumn.scrollHeight - 1;
+      downArrow.classList.toggle('hidden', !canScroll || atBottom);
+    }
+
+    function updateAllColumnScrollArrows() {
+      document.querySelectorAll('.event-column-wrapper').forEach(function(wrapper) {
+        updateColumnScrollArrow(
+          wrapper.querySelector('.event-scroll-column'),
+          wrapper.querySelector('.event-scroll-arrow-down')
+        );
+      });
+    }
+    window.addEventListener('resize', updateAllColumnScrollArrows);
+
+    // A pointer needs to move further than this, in CSS pixels, before a
+    // press-then-release on a column counts as a scroll/drag rather than a
+    // tap; used by makeColumnDraggable() below to stop a scroll gesture
+    // from also opening whichever event pane's poster the pointer happens
+    // to be released over.
+    const DRAG_THRESHOLD_PX = 6;
+
+    /** Lets a mouse click-and-drag pan a column's own vertical scroll,
+     *  matching this design's own brief ("scrollable with mouse or
+     *  finger"): overflow-y:auto alone only responds to a mouse wheel or a
+     *  scrollbar drag, never to a plain click-and-drag on the content
+     *  itself, unlike touch, which already pans natively with no JS here.
+     *
+     *  The harder half of the brief is the click-vs-scroll disambiguation
+     *  it explicitly calls out: every event pane is a <button>, and a
+     *  scroll gesture that starts and ends over the same button would
+     *  otherwise also fire that button's own 'click' and open its poster.
+     *  Touch already avoids this on its own in every mainstream mobile
+     *  browser (a 'click' synthesized from a tap is suppressed once a
+     *  'touchmove' past a small threshold has fired first), but mouse
+     *  click-and-drag has no such native suppression, since 'mousedown' /
+     *  'mousemove' / 'mouseup' / 'click' are ordinary, unrelated event
+     *  types as far as the browser is concerned; a 'click' fires after
+     *  'mouseup' purely because both targeted the same element, regardless
+     *  of any 'mousemove' in between. This function tracks the pointer's
+     *  own start position for both input types and, if it moved past
+     *  DRAG_THRESHOLD_PX before release, intercepts the subsequent 'click'
+     *  in the capture phase (before it can reach an event pane's own
+     *  bubble-phase listener) and cancels it. Touch gets the same explicit
+     *  check too, even though it is likely redundant with the native
+     *  behavior above, so both input types are verified by the same one
+     *  mechanism rather than trusting an assumption about browser
+     *  behavior that was not directly tested here. */
+    function makeColumnDraggable(scrollColumn) {
+      let mouseDown = false;
+      let mouseDragged = false;
+      let mouseStartY = 0;
+      let mouseStartScrollTop = 0;
+
+      scrollColumn.addEventListener('mousedown', function(event) {
+        mouseDown = true;
+        mouseDragged = false;
+        mouseStartY = event.clientY;
+        mouseStartScrollTop = scrollColumn.scrollTop;
+        // Stops the browser's own default text-selection drag, which a
+        // plain click-and-drag over ordinary content would otherwise
+        // start.
+        event.preventDefault();
+        scrollColumn.classList.add('dragging');
+      });
+
+      // Registered on document, not scrollColumn: a drag must keep
+      // updating the scroll position even if the pointer strays outside
+      // this column's own bounds mid-drag, the same behavior any
+      // click-and-drag UI needs.
+      document.addEventListener('mousemove', function(event) {
+        if (!mouseDown) return;
+        const deltaY = event.clientY - mouseStartY;
+        if (Math.abs(deltaY) > DRAG_THRESHOLD_PX) mouseDragged = true;
+        scrollColumn.scrollTop = mouseStartScrollTop - deltaY;
+      });
+
+      document.addEventListener('mouseup', function() {
+        mouseDown = false;
+        scrollColumn.classList.remove('dragging');
+      });
+
+      let touchStartY = 0;
+      let touchDragged = false;
+
+      scrollColumn.addEventListener('touchstart', function(event) {
+        touchDragged = false;
+        touchStartY = event.touches[0].clientY;
+      }, { passive: true });
+
+      // Also stops the document-level touchmove handler above from
+      // blocking this column's own native touch scroll, the same pattern
+      // index-design3-banner.html's own event row touchmove listener uses.
+      scrollColumn.addEventListener('touchmove', function(event) {
+        event.stopPropagation();
+        if (Math.abs(event.touches[0].clientY - touchStartY) > DRAG_THRESHOLD_PX) touchDragged = true;
+      }, { passive: true });
+
+      // Capture phase (the final `true` argument), not the default bubble
+      // phase: capture listeners on an ancestor run before an event
+      // reaches a descendant target, so stopping the event here prevents
+      // it from ever reaching an event pane's own bubble-phase 'click'
+      // listener at all, rather than reacting after the fact.
+      scrollColumn.addEventListener('click', function(event) {
+        if (mouseDragged || touchDragged) {
+          event.stopPropagation();
+          event.preventDefault();
+        }
+      }, true);
+    }
+
+    /** Builds the whole four-column grid from weekendData above. Column
+     *  content comes entirely from that data, not user input, so building
+     *  it with innerHTML carries no injection risk. Called once, since
+     *  every weekend's events are shown together and permanently, unlike
+     *  index-design1-slider.html's and index-design3-banner.html's own
+     *  renderEventRow(), which rebuilds one row every time a different
+     *  weekend is selected. */
+    function renderScheduleGrid() {
+      const grid = document.getElementById('schedule-grid');
+      grid.innerHTML = '';
+
+      weekendData.forEach(function(weekend) {
+        const column = document.createElement('div');
+        column.className = 'schedule-column';
+
+        const weekendPane = document.createElement('div');
+        weekendPane.className = 'weekend-pane';
+        if (isDateFullyPast(weekend.endDate)) {
+          weekendPane.classList.add('past');
+        }
+        weekendPane.innerHTML =
+          '<p class="pane-dates">' + weekend.dates + '</p>' +
+          '<p class="pane-title">' + weekend.title + '</p>';
+        column.appendChild(weekendPane);
+
+        const wrapper = document.createElement('div');
+        wrapper.className = 'event-column-wrapper';
+
+        const scrollColumn = document.createElement('div');
+        scrollColumn.className = 'event-scroll-column';
+
+        const downArrow = document.createElement('button');
+        downArrow.type = 'button';
+        downArrow.className = 'event-scroll-arrow-down hidden';
+        downArrow.setAttribute('aria-label', 'Więcej wydarzeń poniżej');
+        downArrow.innerHTML = '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 5.5 8 11.5 13.5 5.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+
+        if (weekend.events.length === 0) {
+          const note = document.createElement('p');
+          note.className = 'event-placeholder-note';
+          note.textContent = 'Wydarzenia tego weekendu zostaną dodane wkrótce.';
+          scrollColumn.appendChild(note);
+        } else {
+          weekend.events.forEach(function(event) {
+            const pane = document.createElement('button');
+            pane.className = 'event-pane';
+            if (isDateFullyPast(event.date)) {
+              pane.classList.add('past');
+            }
+            pane.innerHTML =
+              '<p class="pane-datetime">' + event.datetime + '</p>' +
+              '<p class="pane-title">' + event.title + '</p>' +
+              '<p class="pane-venue">' + event.venue + '</p>';
+            pane.addEventListener('click', function() {
+              openEventPoster(pane, event);
+            });
+            scrollColumn.appendChild(pane);
+          });
+        }
+
+        scrollColumn.addEventListener('scroll', function() {
+          updateColumnScrollArrow(scrollColumn, downArrow);
+        }, { passive: true });
+        makeColumnDraggable(scrollColumn);
+
+        downArrow.addEventListener('click', function() {
+          scrollColumnDown(scrollColumn);
+        });
+
+        wrapper.appendChild(scrollColumn);
+        wrapper.appendChild(downArrow);
+        column.appendChild(wrapper);
+        grid.appendChild(column);
+      });
+
+      updateAllColumnScrollArrows();
+    }
+
+    renderScheduleGrid();
+
+    Reveal.addEventListener('ready', function() {
+      // Try to lock to landscape; silently fails on iOS and on Android outside
+      // fullscreen/PWA context, which is the expected result for a normal page.
+      if (screen.orientation && screen.orientation.lock) {
+        screen.orientation.lock('landscape').catch(function(error) {
+          console.log('Cannot lock orientation to landscape:', error);
+        });
+      }
+    });
+  </script>
+</body>
+</html>

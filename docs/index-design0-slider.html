@@ -1,0 +1,1843 @@
+<!doctype html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <!-- Non-standard hints that nudge some Android browsers toward landscape. -->
+  <meta name="screen-orientation" content="landscape">
+  <meta name="x5-orientation" content="landscape">
+  <!-- Enables fullscreen mode when added to iOS/Android home screen,
+       which is a prerequisite for screen.orientation.lock() on some platforms. -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <title>Festiwal Młodej Muzyki 2025 (Design 1: slider)</title>
+  <link rel="icon" href="data:,">
+
+  <!-- Reveal.js core -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@6.0.1/dist/reset.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@6.0.1/dist/reveal.css">
+
+  <!-- MapLibre GL JS for map -->
+  <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.css"/>
+
+  <!-- EMBEDDED CSS -->
+  <style>
+    /* 2026 festival coloristics, sourced from docs/fmm26_www2.jpg (a dark
+       navy ink used for both the violin silhouette and the "FESTIWAL..."
+       wordmark, a sage green, and a cream, with no second saturated tone
+       anywhere in the source), replacing the 2025 white/blue palette this
+       file used previously; the 2025 hex values stay on record in
+       README.md's Festival color palette table and in git history, not as
+       live CSS in this file.
+       --primary-color/--text-color are not the ink's own as-sampled
+       saturation (HSL(214°, 23%, 24%), hex #303c4c): reviewed on screen,
+       that reads as a dark, desaturated gray rather than a legible navy
+       blue, indistinguishable at a glance from the unrelated past-date
+       gray (#767676) it needs to contrast against. Saturation raised to
+       55% at the same hue and lightness (HSL(214°, 55%, 24%), hex
+       #1c3960), matching the 2025 palette's own primary saturation
+       (`#378cbe` is HSL(202°, 55%, 48%)), so the color reads as clearly
+       blue rather than gray while staying the same darkness the source
+       image itself has; still 11.64:1 against white.
+       --accent-color is a computed darken of --primary-color (not itself
+       sampled, the source has only one dark tone) for hover/selected-
+       border states that need to read as a shade of the primary color
+       rather than an unrelated one.
+       --muted-color is computed, not sampled: an earlier version darkened
+       the sampled sage for this role, which on screen read as indistinct
+       from --primary-color/--text-color, both muddy dark tones despite
+       being different hues; sage and navy are different hue families
+       (green vs. blue), and a muted secondary text color needs to read as
+       an obviously lighter/less-saturated variant of the SAME primary
+       color family to be legible as "muted" rather than just "a different
+       dark color," the same relationship the 2025 palette's own
+       `--primary-color`/`--muted-color` pair has (HSL(202°, 55%, 48%) vs.
+       HSL(202°, 22%, 45%): same hue, large lightness/saturation gap, not a
+       different hue). `--muted-color` here is therefore the sampled ink's
+       own hue (214°) at a substantially lower saturation and higher
+       lightness than --primary-color (HSL(214°, 22%, 45%)), still 5.14:1
+       against white, comfortably clearing WCAG 2.2 AA's 4.5:1 minimum for
+       text.
+       --sage-color and --cream-color are the two remaining sampled tones,
+       not used as text/border colors: raw sage is only 1.65:1 and raw
+       cream only 1.13:1 against white, both far under the text minimum,
+       so neither can carry text or a border on its own; --text-color at
+       those fills is still 7.08:1 (sage) and 10.28:1 (cream). --sage-color
+       was also the selected-weekend-pane's own fill originally; moved to a
+       solid --primary-color navy fill instead (see
+       .weekend-pane.selected:not(.past) below for why), leaving
+       --sage-color's only remaining use the map water fill.
+       --cream-color, by contrast, went the other way: originally only the
+       selected-event-pane fill, now also the page's own main background
+       (body/.reveal-viewport/.reveal .slide-background, the header, the
+       map's own fallback background, the map footer, and the map funding
+       notice), matching the festival's own poster artwork, whose body is
+       a cream full-bleed background rather than white. The selected
+       event-pane fill and every other existing use of --cream-color are
+       unchanged by this; only the areas that were plain white before are
+       new.
+       --marker-color replaces the 2025 palette's --crimson: a status
+       color marking the one pane matching the map's own selected marker,
+       unrelated to either year's background theme, so not itself sampled
+       from the 2026 source material. Vivid crimson (HSL 345°, 89%, 47%)
+       was reviewed against the 2026 palette and dropped: every other
+       color here is comparatively muted (navy's own 55% saturation is
+       the highest of the four sampled/derived tones) and crimson's hue
+       has no relationship to any of them, so it read as an outlier
+       rather than an accent. A first replacement, a dark terracotta
+       (HSL 28°, 85%, 40%, hex #bd600f), fixed the hue-family mismatch
+       but was reviewed again and found too dark/muted on its own,
+       reading as flat rather than as a lively accent against the rest of
+       this already-muted palette. Settled on a bright, fully-saturated
+       orange (HSL 24°, 100%, 45%) instead, close in hue to the sampled
+       cream (69°) like the terracotta was, but with real vibrancy;
+       3.56:1 against white clears WCAG 2.2 AA's 3:1 non-text (border/UI
+       component) minimum, and also the 3:1 large-text minimum for the
+       one place this color is text rather than a border/fill (the
+       bold, 24px poster-close "×", which qualifies as WCAG "large text"
+       and so does not need the stricter 4.5:1 normal-text minimum).
+       --date-color is not from the fmm26_www2.jpg source above: sampled
+       instead from the organizer's separate full four-weekend 2026
+       schedule poster artwork, averaging every near-black pixel (all
+       three channels under 80) across one of its own date/time lines via
+       the same puppeteer-container canvas getImageData technique, not
+       chosen by eye. Used only for the weekend/event pane date/time
+       lines (see .pane-dates, .pane-datetime below), which needed to read
+       as more prominent/decisive than --muted-color without going as dark
+       as pure black: visitors decide whether they can attend from this
+       line specifically, so it carries more weight than the rest of a
+       pane's own text. Distinct from --text-color/--primary-color despite
+       being close in darkness: that pair is a navy (HSL 214°, 55%, 24%),
+       while this is the poster's own near-neutral ink (R33 G33 B31, only
+       a couple of levels off true gray), so reusing --text-color here
+       would have quietly shifted every date/time line's own hue toward
+       blue instead of keeping the poster's own tone. 18.7:1 against
+       white, comfortably clearing WCAG 2.2 AA's 4.5:1 minimum. */
+    :root {
+      --primary-color: #1c3960;
+      --accent-color: #152b48;
+      --text-color: #1c3960;
+      --muted-color: #596f8d;
+      --sage-color: #bfcebb;
+      --cream-color: #f0f2e5;
+      --marker-color: #e65c00;
+      --date-color: #21211f;
+    }
+
+    html, body {
+      overscroll-behavior: none;
+    }
+
+    html {
+      height: 100dvh;
+    }
+
+    /* Fix the body to the viewport so the document itself can never
+       scroll. A page that cannot scroll gives mobile browsers no reason to
+       collapse or expand the URL bar on finger movements, which keeps the
+       viewport size stable. The rule is inert on desktop because the content
+       already fits the viewport, so the same code serves every platform. */
+    body {
+      position: fixed;
+      inset: 0;
+      overflow: hidden;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    /* Cream background applied at every layer Reveal.js uses, because
+       backgroundColor in Reveal.initialize only sets an inline style on
+       .reveal-viewport after JS runs, which reveal.css may temporarily
+       override, and .slide-background elements are separate.
+       Cream (not white) matches the festival's own poster artwork, whose
+       body is a cream full-bleed background rather than white; the same
+       --cream-color also now fills the header, the map's own background
+       (see .festival-slide #map below), the map footer, and the map
+       funding notice, so the whole page reads as one continuous cream
+       field rather than a white one with a cream accent here and there. */
+    body,
+    .reveal-viewport,
+    .reveal .slide-background {
+      background-color: var(--cream-color);
+    }
+
+    .reveal {
+      font-family: "Source Sans Pro", Helvetica, sans-serif;
+      font-size: 32px;
+      color: var(--text-color);
+    }
+
+    .reveal h1, .reveal h2 {
+      font-family: "Source Sans Pro", Helvetica, sans-serif;
+      text-transform: none;
+      color: var(--text-color);
+      font-weight: 600;
+      line-height: 1.2;
+    }
+
+    .reveal a {
+      color: var(--primary-color);
+      text-decoration: underline;
+    }
+
+    .reveal a:hover {
+      color: var(--accent-color);
+    }
+
+    .reveal .slides section {
+      width: 100%;
+      height: 100%;
+      padding: 60px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    /* This design has a single slide: title, four weekend panes, a
+       horizontal-scrolling event list, and the map all stay on screen
+       together as a flex column (header / event row / map / map footer).
+       display:flex needs !important: confirmed by measuring with
+       Puppeteer that Reveal.js sets display:block via an inline style on
+       the current <section> (for its slide show/hide mechanism, which
+       disableLayout does not turn off), and a plain stylesheet rule can
+       never outrank an inline style. Without this, every flex-basis/
+       flex-grow rule below is silently ignored: the map and its footer
+       fell back to block-layout auto-height (0, for an empty div), with
+       only #map's own min-height keeping it visible at all. */
+    .festival-slide {
+      padding: 0 !important;
+      position: relative;
+      overflow: hidden;
+      display: flex !important;
+      flex-direction: column;
+      /* Anchors content to the top instead of inheriting justify-content:
+         center from .reveal .slides section above. With centering, any
+         viewport slightly shorter than the column's own total content
+         height overflows equally above and below, pushing the title
+         itself above the visible top edge, where overflow:hidden clips
+         it, instead of only clipping the least important content at the
+         bottom (the map already has its own min-height floor as a
+         defensive fallback there). */
+      justify-content: flex-start;
+    }
+
+    /* Plain cream header: the fmm_banner.png background (tried earlier)
+       stayed too cropped/faint under the required text-contrast wash to
+       read as anything but background noise, and was dropped rather than
+       tuned further. Festival navy still carries through via the
+       weekend-pane borders and the map below. Cream, not white, matches
+       the page background above (see the body/.reveal-viewport rule).
+       Sized to its own content (flex:0 0 auto, no explicit height): an
+       earlier version used height:clamp(84px, 16vh, 170px) to grow the
+       header on tall desktop windows, which made sense while it needed
+       room to show more of the banner. With the banner gone that growth
+       served no purpose, and instead left a large gap between the weekend
+       row and the event row below it on tall screens, confirmed with
+       Puppeteer (144px header on a 900px-tall window vs. ~90px of actual
+       content). Auto-sizing removes that gap on every screen size, not
+       just the ones a floor/ceiling pair happened to cover.
+       Top padding (18px, not a smaller value) is a deliberate fixed safety
+       margin, not scaled by clamp(): a real Android phone in Chrome was
+       observed (screen2.jpeg) showing the top of the title's own letters
+       cut off, with no such clipping in a Puppeteer screenshot at the same
+       CSS pixel size. Puppeteer cannot reproduce this because it is a
+       mismatch between the browser's own reported viewport height and the
+       area actually free of its address bar chrome on that device, not a
+       CSS sizing bug (see the analogous, already-documented DuckDuckGo
+       toolbar behavior in the Mobile viewport section below). A blank
+       fixed-size buffer above the title, instead of exactly fitting the
+       title to the viewport's reported top edge, means a few pixels of
+       unexplained chrome overlap costs blank space rather than the title's
+       own letters. */
+    .festival-header {
+      flex: 0 0 auto;
+      /* Bottom padding halved to 3px (was 6px): frees vertical room for
+         the fixed top padding above, so the title has room to render
+         fully on short mobile screens without growing the header's own
+         total height. Raised slightly to 5px after the event-row hover
+         lift below (.weekend-pane:hover, .event-pane:hover) was added: an
+         event pane's own -1px lift ate most of a 3px gap, reading as the
+         event row crowding the weekend row above it on tap; 5px keeps
+         that lift comfortably clear without giving back the room the
+         original halving was for. */
+      padding: 18px 24px 5px 24px;
+      background-color: var(--cream-color);
+    }
+
+    .festival-header h1 {
+      /* Bottom margin is clamp(4px, 1vh, 10px), not a flat value: 4px is
+         the previously-halved figure that frees room for the fixed top
+         padding above on the shortest mobile screens (see the header's own
+         top-padding comment above), kept as the floor so that safety
+         margin is not lost again; the title read as too close to the
+         weekend-pane row below it on a taller window, where 1vh gives more
+         visible air below this title without costing anything on a short
+         screen. */
+      margin: 0 0 clamp(4px, 1vh, 10px) 0;
+      /* clamp(): shrinks on short screens together with the header's own
+         height clamp above, grows on tall ones, without a separate
+         @media breakpoint per device class. */
+      font-size: clamp(13pt, 2.6vh, 22pt);
+      text-align: center;
+    }
+
+    .weekend-row {
+      display: flex;
+      flex-direction: row;
+      gap: 8px;
+    }
+
+    /* Shared card style for weekend and event panes: white with a festival
+       blue border, inviting a click via a hover lift rather than looking
+       like static text. */
+    .weekend-pane, .event-pane {
+      display: block;
+      background-color: #ffffff;
+      border: 2px solid var(--primary-color);
+      border-radius: 8px;
+      text-align: left;
+      cursor: pointer;
+      font-family: inherit;
+      transition: transform 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
+      /* Replaces the browser's own default tap-highlight overlay (a
+         generic translucent blue on WebKit/Blink touch browsers,
+         unrelated to either year's palette) with a translucent tint of
+         --primary-color's own RGB triplet, so the instant tap-feedback
+         flash a touch visitor sees before the click handler's own
+         selected-state change finishes applying reads as part of this
+         design's own 2026 coloristics rather than a generic system
+         color. Not `transparent`: removing the flash entirely would leave
+         touch visitors with no visual acknowledgment that their tap
+         registered until the resulting border/fill change finishes
+         applying. */
+      -webkit-tap-highlight-color: rgba(28, 57, 96, 0.25);
+    }
+
+    /* translateY(-1px), not -2px: on touch devices, :hover is commonly
+       triggered by a tap and held until the visitor taps elsewhere rather
+       than clearing on "mouse out" the way it does on desktop, so this
+       lift is visible on phones too, not just to mouse users; reduced
+       after review found the -2px lift reading as the pane visibly
+       "jumping" on tap, more noticeable on a phone screen than the same
+       lift is on desktop. */
+    .weekend-pane:hover, .event-pane:hover {
+      background-color: #eff1f4;
+      box-shadow: 0 4px 12px rgba(28, 57, 96, 0.3);
+      transform: translateY(-1px);
+    }
+
+    .weekend-row .weekend-pane {
+      flex: 1 1 0;
+      min-width: 0;
+      min-height: 0;
+      padding: 4px 6px;
+      text-align: center;
+      overflow: hidden;
+    }
+
+    /* Single line each, shrinking via clamp() on the narrowest phones
+       instead of wrapping to a second line, which was measured to nearly
+       triple the header's height (see .festival-header above). white-space
+       nowrap is safe here because both strings are short and fixed
+       (a date range, a two/three-word title). */
+    .weekend-row .pane-dates,
+    .weekend-row .pane-title {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .weekend-row .pane-dates {
+      font-size: clamp(7pt, 1.6vh, 11pt);
+    }
+
+    .weekend-row .pane-title {
+      font-size: clamp(8pt, 1.9vh, 13pt);
+    }
+
+    /* Highlights the weekend that is currently running or, if none is,
+       the next upcoming one (see selectDefaultWeekend() below), and any
+       weekend the visitor taps afterwards. Filled with the solid
+       --primary-color navy, not the sampled sage: reviewed at explicit
+       instruction as too "sad," reading as low-contrast/faint next to the
+       map's own sage water fill directly below it (see README.md's
+       Implementation overview for the mid-tone-navy and pale-navy-tint
+       alternatives considered and rejected first). The pane's own
+       dates/title switch to white text (see the rule below) rather than
+       staying --text-color, since navy text on a navy fill would be
+       illegible; an earlier all-navy attempt that kept dark text was
+       reverted for exactly that reason (see the :root comment's own
+       --sage-color/--cream-color history above), which this fill avoids
+       by pairing navy with white text instead. box-shadow uses
+       --primary-color's own RGB triplet at low alpha, the same "glow is a
+       tint of the pane's own accent" relationship the 2025 palette used.
+       :not(.past): a plain `.weekend-pane.selected` selector (2 classes)
+       ties in specificity with `.weekend-pane.past` below (2 classes too),
+       so which one wins a fill/text conflict on a pane that is both
+       selected and past would depend on which rule happens to be declared
+       later in this stylesheet, an easy-to-break coincidence rather than
+       a guarantee; found by exactly this breaking once for the event-pane
+       equivalent of this rule (see below). :not(.past) instead makes this
+       whole rule simply not match a past pane at all, so there is nothing
+       left to override: `.weekend-pane.past` applies on its own, with no
+       competing rule regardless of source order. A pane that is both
+       selected and past therefore reads as past only (white background,
+       gray border/text, no navy fill), the same deliberate "past reads
+       first" choice the comment on `.weekend-pane.past` below explains,
+       just guaranteed by selector structure instead of declaration order.
+       See the .weekend-pane.selected:not(.past):hover rule below for why
+       the generic hover background needed its own override once this
+       pane's text turned white. */
+    .weekend-pane.selected:not(.past) {
+      background-color: var(--primary-color);
+      border-color: var(--accent-color);
+      box-shadow: 0 0 0 3px rgba(48, 60, 76, 0.35);
+    }
+
+    .weekend-pane.selected:not(.past) .pane-dates,
+    .weekend-pane.selected:not(.past) .pane-title {
+      color: #ffffff;
+    }
+
+    /* Without this, hovering a selected weekend pane would fall through to
+       the generic .weekend-pane:hover rule above (light gray background,
+       specificity 0-2-0), leaving the white text above unreadable against
+       it; this selector's own higher specificity (0-4-0) keeps the navy
+       fill during hover instead, relying on the existing translateY(-1px)
+       lift alone for hover feedback on this one pane state. */
+    .weekend-pane.selected:not(.past):hover {
+      background-color: var(--primary-color);
+    }
+
+    /* Gray-shades a weekend/event pane whose date (day resolution, not the
+       specific hour) has fully elapsed. Two earlier approaches were tried
+       and rejected: opacity+grayscale faded everything uniformly and was
+       barely visible against these mostly-white cards; a solid gray fill
+       background fixed the visibility problem but overcorrected into
+       looking emphasized/highlighted rather than deprioritized, since a
+       filled card reads as more prominent than an outlined one, the
+       opposite of the intent. This version keeps the background white
+       (blends in like any other unselected card) and instead sets an
+       explicit, solid gray on the border and every text element: #767676,
+       the standard WCAG 2.2-safe gray that still clears 4.5:1 contrast
+       against white, so it reads as legible but secondary rather than
+       faded or emphasized. Still a real button: past panes stay clickable,
+       this is a visual cue only, not a disabled state. A pane that is both
+       selected and past (only possible for a weekend pane once every
+       weekend has ended, see getDefaultWeekendIndex; an event pane keeps
+       its own marker-color border regardless of past state instead, see
+       .event-scroll-row .event-pane.selected below) reads as past only,
+       via the :not(.past) guards on the .selected rules above rather than
+       anything in this rule itself; a background fill distinguishing
+       "past and was selected" from plain "past" was considered and
+       rejected, since the only fill light enough to keep this gray at
+       4.5:1 measured under 1.2:1 against white, imperceptible, while
+       anything more visible dropped the gray below 4.5:1. */
+    .weekend-pane.past,
+    .event-pane.past {
+      border-color: #767676;
+    }
+
+    .weekend-pane.past .pane-dates,
+    .weekend-pane.past .pane-title,
+    .event-pane.past .pane-datetime,
+    .event-pane.past .pane-title,
+    .event-pane.past .pane-venue {
+      color: #767676;
+    }
+
+    .pane-dates, .pane-datetime {
+      font-size: 11pt;
+      color: var(--date-color);
+      margin: 0 0 4px 0;
+    }
+
+    .pane-title {
+      font-size: 13pt;
+      font-weight: 600;
+      color: var(--text-color);
+      margin: 0;
+    }
+
+    .pane-venue {
+      font-size: 10pt;
+      color: var(--primary-color);
+      margin: 4px 0 0 0;
+    }
+
+    /* Lays the two prev/next arrow buttons (see .event-scroll-arrow below)
+       and the event row itself out as three plain flex siblings, arrows
+       on the outside. Takes over the row's own flex slot in the
+       header/row/map/footer column.
+       A first version positioned the arrows with position:absolute over
+       the row's own side padding instead of as flex siblings; reverted
+       after real use showed the 28px arrow (needed for an easy tap
+       target) overlapped a few pixels of the first/last card's own
+       clickable area, which the row's 24px padding was not wide enough to
+       clear, causing the arrow tap to sometimes register on the card
+       underneath instead. Plain flex siblings give the arrows their own
+       layout space that a card can never occupy, which fixes this by
+       construction rather than by tuning a pixel offset that could
+       reopen the same problem at a different card width. */
+    .event-row-wrapper {
+      flex: 0 0 auto;
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      gap: 2px;
+    }
+
+    /* Horizontal-scrolling event list for the selected weekend. Finger
+       swipe/drag still works natively via plain overflow-x:auto (no JS
+       pans it); the prev/next arrow buttons (see .event-scroll-arrow
+       below) are an additional, explicit affordance for both mouse and
+       touch, replacing the browser's own scrollbar rather than
+       supplementing it (see the scrollbar-hiding rules below), so both
+       desktop and mobile use the same next/previous mechanism instead of
+       relying on a scrollbar that different browsers and platforms render
+       differently, or not at all.
+       height is clamp(min, vh, max), scaling with viewport height like the
+       header used to (see .festival-header above for why the header no
+       longer does this itself). Lowered from the previous 92-140px range
+       after event panes were cut down to 3 lines of text (see .event-pane
+       and .event-scroll-row .pane-title below): a shorter card needs less
+       row height, and the reclaimed height goes to the map and to the
+       header/footer safety margins above instead.
+       min-height:0 on this row AND on .event-pane below is required,
+       confirmed by measuring with Puppeteer: a flex item's default
+       min-height:auto prevents it from shrinking below its own content
+       size, which previously let an unclamped description's full content
+       height leak into this row's own sizing (a Chromium quirk with
+       -webkit-line-clamp elements, documented in README.md's
+       Implementation overview). The title is no longer clamped with
+       -webkit-line-clamp either (see .event-scroll-row .pane-title
+       below), which removes that quirk's root cause for this row
+       entirely rather than only working around its symptom. */
+    .event-scroll-row {
+      flex: 1 1 auto;
+      /* min-width:0 alongside min-height:0: the same flex-item default
+         (min-width:auto here) that previously needed min-height:0 to let
+         this row shrink below its content's un-clamped size (see the
+         comment above) would otherwise also stop this row, now a flex
+         item of .event-row-wrapper's row layout, from ever shrinking
+         narrower than its own scrollable content, which would push the
+         arrow buttons out of the wrapper instead of leaving the row to
+         scroll internally. */
+      min-width: 0;
+      height: clamp(64px, 11vh, 96px);
+      min-height: 0;
+      display: flex;
+      flex-direction: row;
+      align-items: stretch;
+      gap: 8px;
+      /* Top padding halved to 1.5px (was 3px), same reasoning as the
+         header's own bottom padding above: shrinks the gap between the
+         weekend-pane row and this row so the title above has more room
+         without growing the column's total height. Bottom padding is
+         unrelated to that gap and stays 3px. */
+      padding: 1.5px 8px 3px 8px;
+      overflow-x: auto;
+      overflow-y: hidden;
+      -webkit-overflow-scrolling: touch;
+      /* Firefox: hides the native scrollbar. The prev/next arrow buttons
+         are the only scroll affordance shown now (see .event-scroll-arrow
+         below); native scrollbars render inconsistently across mobile
+         browsers (a visible bar taking real vertical space on some, an
+         invisible overlay on others), which is exactly the kind of
+         cross-browser variation this design now avoids depending on. */
+      scrollbar-width: none;
+    }
+
+    /* Chrome/Safari/most mobile WebViews: same scrollbar-hiding intent as
+       scrollbar-width above, via the vendor-prefixed pseudo-element these
+       engines use instead. */
+    .event-scroll-row::-webkit-scrollbar {
+      display: none;
+    }
+
+    /* Prev/next arrow buttons, styled after the circular "skip to next
+       product" arrows common on shopping-basket horizontal carousels: a
+       filled circle, large enough to be an easy tap target (28px, close
+       to the WCAG 2.2 24x24 CSS px minimum target size). A plain flex
+       item of .event-row-wrapper (see above), not absolutely positioned
+       over the row, so it occupies its own layout space that a card can
+       never be laid out underneath. flex:0 0 auto keeps it at its own
+       width regardless of how much space the row next to it needs. */
+    .event-scroll-arrow {
+      flex: 0 0 auto;
+      width: 28px;
+      height: 28px;
+      padding: 0;
+      border-radius: 50%;
+      border: 2px solid var(--primary-color);
+      background-color: rgba(255, 255, 255, 0.92);
+      color: var(--primary-color);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+      transition: background-color 0.15s ease;
+    }
+
+    .event-scroll-arrow:hover {
+      background-color: #eef7fb;
+    }
+
+    .event-scroll-arrow svg {
+      width: 14px;
+      height: 14px;
+    }
+
+    /* Hidden, not just visually disabled, once the row has no further
+       room to scroll in that direction (see updateEventScrollArrows()
+       below): with only a handful of events per weekend, an arrow that is
+       always present but inert would invite a click that visibly does
+       nothing. */
+    .event-scroll-arrow.hidden {
+      display: none;
+    }
+
+    .event-scroll-row .event-pane {
+      flex: 0 0 200px;
+      min-height: 0;
+      padding: 6px 10px;
+      overflow: hidden;
+    }
+
+    /* Same clamp() sizing family as the weekend panes above, not a larger
+       fixed size: event panes previously kept larger fixed sizes while
+       weekend panes shrank on short screens, so at most viewport heights
+       the two pane types read as two different font scales side by side.
+       The title clamp is smaller than the weekend pane's own
+       clamp(8pt, 1.9vh, 13pt), since an event pane sits closer to its
+       neighbors in a shorter row, and a title as large as a weekend
+       pane's read disproportionately bold for a subordinate list item;
+       font-weight stays the inherited 600 from the shared .pane-title
+       rule above, only the size shrank. */
+    .event-scroll-row .pane-datetime {
+      font-size: clamp(7pt, 1.6vh, 11pt);
+    }
+
+    .event-scroll-row .pane-title {
+      font-size: clamp(7pt, 1.6vh, 11pt);
+    }
+
+    .event-scroll-row .pane-venue {
+      font-size: clamp(6.5pt, 1.4vh, 10pt);
+    }
+
+    /* Event panes show exactly 3 lines (datetime, title, venue), one more
+       than the weekend panes' 2 (dates, title), matching the one extra
+       field (venue) events need that weekends do not. The one-sentence
+       description previously shown as a 4th line was dropped entirely
+       rather than shrunk further: it duplicated information the event's
+       own poster (opened from the map marker) already shows, and removing
+       it (rather than the venue, which has no equivalent elsewhere in
+       this pane) frees the most height for the least loss of information.
+       The data itself is kept in weekendData below for a possible future
+       individual event slide, which would show the full description,
+       just not rendered here.
+       Title and venue both truncate to a single line with an ellipsis,
+       the same treatment the weekend panes already use for their own
+       dates/title, instead of the previous 2-line -webkit-line-clamp
+       title: found by checking every event card, not just the first, that
+       some titles and venue names ("Inauguracja Festiwalu: Orkiestra
+       Kameralna Polskiego Radia Amadeus", "Akademickie Centrum Kultury i
+       Sztuki Od Nowa") are long enough to wrap past 1 line at this card
+       width. Plain nowrap/ellipsis truncation, not -webkit-line-clamp, was
+       chosen for the title specifically to remove this row's own exposure
+       to the Chromium -webkit-line-clamp flex-sizing quirk documented
+       above (an unclamped element's full content height still leaking
+       into the row's own layout), rather than only working around it with
+       min-height:0 again. */
+    .event-scroll-row .pane-title,
+    .event-scroll-row .pane-venue {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* Highlights the event pane focused via selectEvent(), matching the
+       marker on the map it zoomed to. --marker-color border, not festival
+       ink, so it reads as a distinct "you are here" state rather than
+       another selectable-but-inactive pane (see the :root comment above
+       for why this is a terracotta accent rather than the 2025 palette's
+       own crimson). Border/box-shadow are unconditional on .selected,
+       including for a past-and-selected pane: unlike a weekend pane (see
+       .weekend-pane.selected:not(.past) above), this border's meaning
+       ("this pane matches the map's own marker") has nothing to do with
+       the event's own date, so there is no reason for .past to override
+       it, and the map marker itself stays shown regardless of the
+       event's own past state. */
+    .event-scroll-row .event-pane.selected {
+      border-color: var(--marker-color);
+      box-shadow: 0 0 0 3px rgba(230, 92, 0, 0.3);
+    }
+
+    /* The fill, unlike the border above, is guarded with :not(.past): it
+       uses --cream-color, a light fill distinct from the selected weekend
+       pane's own solid navy (see that rule's own comment), giving the
+       two different kinds of "selected" pane a visually distinct fill on
+       top of their already-distinct border color, but only while the
+       event is not past, matching the "past reads first" treatment every
+       other pane in this file gives its own background. A parallel
+       version of this rule filled with --sage-color instead, freed up by
+       the weekend pane's own navy swap; reverted back to --cream-color at
+       explicit instruction before it was ever rendered for review. Without
+       this guard, `.event-scroll-row .event-pane.selected` (3 classes) would
+       outrank `.event-pane.past` (2 classes) regardless of source order,
+       showing the cream fill on a past event pane; found exactly this
+       way by clicking a real past-dated event pane and seeing the cream
+       fill persist where a plain white background was expected. */
+    .event-scroll-row .event-pane.selected:not(.past) {
+      background-color: var(--cream-color);
+    }
+
+    .event-placeholder-note {
+      align-self: center;
+      color: var(--muted-color);
+      font-size: 12pt;
+      margin: 0;
+    }
+
+    /* The map fills whatever height the header and event row leave, as a
+       normal flex child of the slide's own flex column. background-color
+       is a fallback only, matching the page's own cream (see the
+       body/.reveal-viewport rule above): the MapLibre canvas itself paints
+       over this the moment it loads (see initializeMap() below for its
+       own white land/sage water/navy road recoloring, deliberately kept
+       as its own self-contained palette, unrelated to this fallback), so
+       this color only shows briefly before that canvas paints, or in any
+       edge/margin the canvas itself does not cover. */
+    .festival-slide #map {
+      position: relative;
+      background-color: var(--cream-color);
+      flex: 1 1 auto;
+      /* Defensive floor: guarantees the map stays usable even on the
+         shortest realistic mobile-landscape screens if the header or
+         event row above ever grow taller than expected, instead of
+         silently shrinking to nothing. */
+      min-height: 100px;
+      width: 100%;
+    }
+
+    /* Thin strip at the bottom of the map that guarantees the MapLibre
+       attribution (which sits inside #map's own bottom-left corner, not
+       inside this strip) is not glued flush to the screen's physical
+       bottom edge. 24px, not the attribution's own ~20px height: raised
+       from an earlier 14px after a real Android Chrome screenshot
+       (screen2.jpeg) showed only a sliver of the attribution text, cut off
+       by the physical screen edge, at a CSS pixel size where a Puppeteer
+       screenshot showed the full attribution comfortably on screen. Same
+       browser-chrome-accounting mismatch as the header's top padding
+       above, not reproducible with an exact viewport-size calculation, so
+       the fix is a bigger fixed safety margin rather than a recomputed
+       exact one. */
+    .map-footer {
+      flex: 0 0 24px;
+      width: 100%;
+      background-color: var(--cream-color);
+    }
+
+    /* Opaque cream panel covering the map, carrying the required public
+       funding-disclosure banner image (see README.md's Contents of the
+       slides section). The banner image itself (docs/logos/fmm26_belka.jpg)
+       is a pre-composed asset with its own white background baked in and
+       is not recolored here; only the panel's own background around that
+       image is cream rather than white, matching the rest of the page.
+       Nested inside #map (not a sibling) rather than
+       positioned against .festival-slide, so its bounds always match the
+       map's own box, which itself resizes with the clamp()-driven
+       header/event-row heights above it.
+       Shown by default (see selectWeekend() below, which shows it on the
+       initial weekend selection at page load and on every later weekend
+       switch) and hidden whenever an event pane is picked (see
+       selectEvent() below), since picking an event signals the visitor
+       wants to see that venue's marker, not the credits. There is no
+       persisted "already seen" state: every weekend switch, including a
+       fresh page load, shows it again, since a funding notice that a
+       visitor could permanently dismiss for future visits would not
+       reliably satisfy the funder's visibility requirement.
+       z-index is set explicitly rather than relying on DOM order: MapLibre
+       GL JS appends its own canvas and control elements into #map at
+       runtime (see initializeMap() below), after this panel already exists
+       in the static markup below; without an explicit z-index, those
+       later-inserted elements would paint over this panel despite both
+       being position:absolute. */
+    .map-funding-notice {
+      position: absolute;
+      inset: 0;
+      z-index: 20;
+      background-color: var(--cream-color);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      /* flex-end, not center: anchors the banner to the bottom of the map
+         area, just above .map-footer, rather than floating in the
+         vertical middle of however tall the map happens to be (which on a
+         tall desktop window left a lot of blank white space both above
+         and below it). */
+      justify-content: flex-end;
+      padding: 8px 2.5vw;
+      overflow-y: auto;
+    }
+
+    .map-funding-notice.hidden {
+      display: none;
+    }
+
+    /* Single banner image (fmm26_belka.jpg) carrying the required
+       "Dofinansowano..." text baked into its own artwork (top-left, next
+       to the MKiDN logo) plus every sponsor/patronage/organizer/partner
+       logo, replacing the previous separate text paragraph and five
+       individually cropped and sized logos: the funder now requires many
+       more logos than five, and sizing each individually to stay legible
+       no longer fits this panel at any viewport width in this file's
+       supported range.
+       width:100% (of the panel's own content width, already vw-driven via
+       the panel's own horizontal padding above), height:auto: keeps the
+       banner's own fixed aspect ratio (8268x1004 source pixels) at every
+       viewport width, rather than a fixed px size tuned for one screen. On
+       the narrowest supported phones the banner's own text and logos
+       render too small to read; a visitor who needs to read them can
+       pinch-zoom (see the touchmove listener below, which explicitly
+       permits two-finger zoom). */
+    .map-funding-notice-banner {
+      display: block;
+      width: 100%;
+      height: auto;
+    }
+
+    /* Portrait overlay — shown via @media below; hidden by default.
+       Uses the festival's own white/black/blue palette, independent of the
+       --primary-color etc. custom properties above. */
+    #portrait-warning {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background-color: #ffffff;
+      z-index: 9999;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 16px;
+      text-align: center;
+      padding: 40px;
+      font-family: "Source Sans Pro", Helvetica, sans-serif;
+    }
+
+    /* aspect-ratio: 800 / 1080, not the source's own full 1920 / 1080:
+       cuts off the left and right sides of fmm26_www2.jpg, keeping the
+       full height, per the brief this crop was built for. 800px of the
+       source's own 1920px width was chosen by measuring the violin+
+       wordmark lockup's own ink bounding box with the puppeteer
+       container's canvas getImageData (a throwaway script, deleted after
+       use, the same technique as this file's own funding-notice-banner
+       and other measured crops): the ink spans source columns 656-1263
+       (607px wide), already centered within about 4px of the source's own
+       960px horizontal center, so a centered 800px window keeps it with
+       roughly 96-97px of breathing room on each side without needing an
+       off-center crop bias. */
+    .festival-poster {
+      position: relative;
+      width: 100%;
+      max-width: 280px;
+      aspect-ratio: 800 / 1080;
+      display: block;
+      overflow: hidden;
+    }
+
+    /* object-fit: cover at the box's own 800/1080 ratio, well narrower
+       than the source's native 1920/1080, scales the source to the box's
+       full height and crops the resulting horizontal overflow; object-
+       position's default (50% 50%, i.e. center) crops that overflow
+       symmetrically from both sides, matching the centered 800px window
+       computed above exactly, rather than needing an explicit off-center
+       position. Replaces the previous fmm_plakat.png poster's own
+       transform: scale(1.15) crop, which existed to trim that (different,
+       portrait-oriented) source's own outer white margins; the 800/1080
+       aspect-ratio above already selects the exact intended window from
+       this source directly, so no extra scale is needed on top of it. */
+    .festival-poster img {
+      display: block;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center;
+      border-radius: 0 0 8px 8px;
+    }
+
+    .rotate-cta {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      /* This row is centered as a whole unit within #portrait-warning's
+         own centered column, so a wider gap shifts the text's own left
+         edge further from center, not just the icon. Reduced from 24px
+         after enlarging the icon widened the row enough to visibly shift
+         the text off-center. */
+      gap: 16px;
+    }
+
+    #portrait-warning .rotate-icon {
+      /* Scaling the whole rendered SVG uniformly does not disturb the
+         viewBox padding trick below that keeps its "legs" centered on
+         the instruction text, since that centering is a proportion
+         within the viewBox, not an absolute pixel value. */
+      width: 24px;
+      height: auto;
+      transform-origin: 50% 50%;
+      animation: hint-rotate 2.25s ease-in-out infinite;
+    }
+
+    @keyframes hint-rotate {
+      0%, 100% { transform: rotate(0deg); }
+      50%       { transform: rotate(30deg); }
+    }
+
+    /* #1c3960, the 2026 navy also used for --primary-color/--text-color
+       (see the :root comment near the top of this file), not a var()
+       reference to either: this card's own colors are kept as explicit
+       hex values throughout, independent of the :root custom properties
+       used elsewhere on the page, so the landing card's own colors stay
+       stable even if those custom properties are retuned for the rest of
+       the page later. 11.64:1 against this rule's own white background,
+       comfortably clearing WCAG 2.2 AA's 4.5:1 minimum for text. */
+    #portrait-warning p {
+      color: #1c3960;
+      font-size: 14pt;
+      white-space: nowrap;
+      margin: 0;
+    }
+
+    /* On small portrait screens, show the overlay and hide the presentation. */
+    @media screen and (orientation: portrait) {
+      #portrait-warning { display: flex; }
+      .reveal          { display: none; }
+    }
+
+    /* The reveal.js .reveal a rule sets color and text-decoration on all anchors,
+       which bleeds into the MapLibre attribution links. Reset those properties
+       explicitly for the attribution control. */
+    /* The href to https://marcindulak.github.io was always present in
+       customAttribution below, but this rule previously stripped its
+       underline and set it to plain black, making it look like ordinary
+       text rather than a link. Restored to the festival blue with an
+       underline, like every other link in this file, so it reads as
+       clickable instead of being a link in markup only. */
+    .maplibregl-ctrl-attrib a {
+      color: var(--primary-color);
+      text-decoration: underline;
+    }
+
+    /* Circular, semi-transparent marker for a festival event venue: large
+       enough to be an easy tap target, but translucent so the map
+       underneath stays legible, per the design brief. Uses --marker-color
+       (see the :root comment near the top of this file for why that is a
+       terracotta rather than the 2025 palette's own crimson red). Only
+       one of these ever exists on the map at a time (see
+       showSingleMarker() below), so no separate "focused" variant is
+       needed: the one marker present is always the relevant one. */
+    .event-marker {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: rgba(230, 92, 0, 0.55);
+      border: 2px solid rgba(230, 92, 0, 0.85);
+      cursor: pointer;
+      /* No transition on transform: MapLibre repositions this element via
+         its own inline transform on every render frame while the map pans
+         or zooms. A CSS transition on transform would ease toward each new
+         position instead of snapping to it, making the marker visibly lag
+         and drift apart from the map tiles underneath it during any
+         animated move (easeTo, fitBounds) instead of staying pinned to its
+         coordinate. background-color keeps its own transition for hover. */
+      transition: background-color 0.15s ease;
+    }
+
+    .event-marker:hover {
+      background: rgba(230, 92, 0, 0.75);
+      transform: scale(1.08);
+    }
+
+    /* Fullscreen poster overlay. Positioned toward the right edge of the
+       screen because the source posters are portrait-oriented and the
+       presentation is landscape; a future clean/landscape poster would not
+       need this. */
+    .poster-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 10000;
+      display: none;
+      align-items: center;
+      justify-content: flex-end;
+      background: rgba(28, 27, 23, 0.65);
+    }
+
+    .poster-overlay.open {
+      display: flex;
+    }
+
+    /* Wraps the image so the close button (below) can be positioned
+       relative to the image's own corner instead of a fixed viewport
+       corner, which previously landed the button on top of the poster's
+       own content whenever the image was narrower than the viewport.
+       max-height uses dvh, not vh: plain vh resolves against the large
+       viewport (the size the page would have with the mobile browser's
+       address bar hidden), not the actually visible one, the same
+       distinction documented for `html { height: 100dvh; }` above. With
+       the address bar showing, 92vh was taller than the real visible
+       height, pushing the poster's own top and bottom past the screen's
+       edges; dvh tracks the real visible height as the address bar
+       shows/hides. */
+    .poster-frame {
+      position: relative;
+      margin-right: 4vw;
+      max-height: 92dvh;
+      max-width: 55vw;
+    }
+
+    .poster-frame img {
+      display: block;
+      max-height: 92dvh;
+      max-width: 55vw;
+      border-radius: 8px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+    }
+
+    /* Straddles the image's top-right corner (half in, half out) rather
+       than covering its content: a standard "badge" placement. Still well
+       above the WCAG 2.2 24x24 CSS px minimum target size.
+       Grows along with the poster image when the visitor pinch-zooms into
+       it: expected, not a bug. Pinch-zoom is a native browser feature
+       that magnifies the whole visual viewport uniformly; this button
+       sits in the same normal document flow as the poster image (both
+       position: absolute within .poster-frame), so nothing in this
+       page's own CSS or JS scales it differently from the poster next to
+       it. Exempting one element from native pinch-zoom would need a
+       continuous Visual Viewport API listener to counter-scale it, which
+       was considered and not pursued: fragile across browsers for a
+       cosmetic concern only, not a functional one (the button stays
+       exactly as tappable, just visually larger, like everything else on
+       a zoomed-in page). */
+    .poster-close {
+      position: absolute;
+      top: -18px;
+      right: -18px;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: #ffffff;
+      color: var(--marker-color);
+      border: 2px solid var(--marker-color);
+      font-size: 24px;
+      line-height: 1;
+      font-weight: bold;
+      cursor: pointer;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+    }
+  </style>
+</head>
+<body>
+  <!-- Portrait landing card asking the visitor to rotate to landscape,
+       showing the festival's own poster. -->
+  <div id="portrait-warning">
+    <div class="festival-poster">
+      <!-- fmm26_www2.jpg, the festival's own 2026 coloristics reference
+           (cream/sage/navy diagonals with the violin-and-piano-key mark
+           and wordmark), replaces the 2025 fmm_plakat.png poster this card
+           showed previously (see Abandoned ideas in README.md once this
+           design is written up): that was itself already a placeholder,
+           since no 2026 poster exists yet, and the 2026 source material is
+           now available. The source is a 1920x1080 landscape image; see
+           .festival-poster/.festival-poster img below for how it is
+           cropped to just the violin+wordmark lockup for this card's
+           narrower portrait slot. -->
+      <img src="fmm26_www2.jpg" alt="Festiwal Młodej Muzyki 2026">
+    </div>
+    <div class="rotate-cta">
+      <p>Obróć urządzenie poziomo</p>
+      <!-- Re-traced from docs/fmm26_www2.jpg's own violin+piano-key mark
+           (measured with the puppeteer container's canvas getImageData, a
+           throwaway script, row by row, deleted after use, the same
+           technique this file's own logo/crop measurements already use),
+           replacing the previous version traced from the 2025 poster's own
+           icon. Coordinates are the source's own measured pixel positions,
+           shifted so the scroll's own top-left sits near (0,0).
+           The scroll/pegbox (circle + polygon) is one connected shape,
+           corrected after review found the first version's separate circle
+           and stroked peg lines left visible gaps between them; the source
+           has no such gaps, its scroll/shoulder/waist/pegbox/neck read as
+           one unbroken silhouette. Three small circles (2 left, 1 right)
+           sit for the tuning pegs, each overlapping the polygon's own edge
+           rather than floating apart from it, the same "no gaps" fix; the
+           source's own right-side pegs are a single merged heart-shaped
+           lobe, simplified here to one circle rather than traced exactly,
+           since the difference is not legible at this icon's 24px render
+           size.
+           The body path traces the source's real hourglass shape (an
+           upper bout around y=260, a waist around y=332, a wider lower
+           bout around y=468), which the first hand-drawn version did not
+           capture.
+           The source also has two thin horizontal ticks between key pairs
+           1-2/3-4 and 3-4/5-6, and one thin rect overlapping key 5 (a
+           short stub sticking out past key 5's own left edge): all three
+           missing from the first version entirely, found only after a
+           close crop of the source at 5-6x zoom, since at the source's
+           own full-image scale each is only 4-6px tall and easy to
+           mistake for JPEG noise (an earlier measurement pass did exactly
+           that and discarded them; keeping this note so that mistake is
+           not repeated if this icon is re-measured again later). Sized up
+           to 12-13 units tall in an intermediate version, a rendering-
+           crispness floor rather than a remeasurement: this icon renders
+           at 24px wide against a 196-wide viewBox, a ~0.122 scale factor,
+           so the measured 4-6 unit height would render under 1 real
+           device pixel tall, an unavoidably blurry anti-aliased smudge
+           rather than a crisp line, confirmed by computing exact-pixel
+           height at that scale rather than guessing from how it looked in
+           an enlarged debug screenshot (which does not reproduce the
+           native-size rendering at all). Even at that crispness floor,
+           review at the icon's own actual 24px render size found the two
+           ticks reading as uneven notches ("randomly broken teeth") next
+           to the six main keys rather than a deliberate design detail, so
+           all three are commented out below rather than rendered; kept as
+           a record of the measurement (and how their thinness was solved)
+           rather than deleted outright.
+           viewBox height (718, taller than the shape's own natural 573)
+           pads the bottom the same way the previous version's own viewBox
+           did: the six piano keys span y=196-522, so their own vertical
+           midpoint (359) needs to land at the viewBox's own center
+           (359 = 718/2) for align-items: center in .rotate-cta to center
+           the text against the keys rather than the whole icon's geometric
+           center, which sits higher because of the scroll and neck above
+           them. -->
+      <svg class="rotate-icon" viewBox="0 0 196 718" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <circle cx="101" cy="8" r="9" fill="#1c3960"/>
+        <path d="M83,17 L118,17 L118,26 L111,30 L110,37 L111,76 L89,76 L89,37 L91,30 L83,26 Z" fill="#1c3960"/>
+        <circle cx="124" cy="51" r="12" fill="#1c3960"/>
+        <circle cx="76" cy="51" r="10" fill="#1c3960"/>
+        <circle cx="78" cy="68" r="10" fill="#1c3960"/>
+        <rect x="89" y="76" width="22" height="120" fill="#1c3960"/>
+        <path d="M111,196 L162,220 L176,244 L177,268 L172,292 L168,308 L152,332 L154,356 L158,372 L179,396 L187,420 L194,444 L196,468 L191,492 L176,516 L135,540 L101,564 L98,573 L91,548 L91,524 L98,484 L87,436 L91,420 L89,396 L98,356 L87,316 L83,292 L83,276 L90,236 L89,196 Z" fill="#1c3960"/>
+        <g fill="#1c3960">
+          <rect x="15" y="196" width="74" height="33"/>
+          <rect x="4" y="240" width="85" height="31"/>
+          <rect x="23" y="321" width="66" height="34"/>
+          <rect x="12" y="364" width="77" height="33"/>
+          <rect x="21" y="446" width="68" height="34"/>
+          <rect x="10" y="490" width="79" height="32"/>
+          <!-- Measured but removed after review at the icon's own 24px
+               render size found them reading as uneven notches rather
+               than a deliberate detail (see the comment above this SVG
+               for the full account); kept here, commented out, as a
+               record of the measurement rather than deleted outright.
+          <rect class="rotate-icon-tick" x="28" y="292" width="61" height="12"/>
+          <rect class="rotate-icon-tick" x="6" y="417" width="83" height="13"/>
+          <rect class="rotate-icon-stub" x="0" y="457" width="89" height="12"/>
+          -->
+        </g>
+      </svg>
+    </div>
+  </div>
+
+  <div class="reveal">
+    <div class="slides">
+      <!-- The whole presentation is one slide: title, weekend panes, event
+           list, and map all stay visible together. Only Weekend 1 has real
+           event/venue data; Weekends 2-4 show a placeholder note in the
+           event row (see weekendData below) so the weekend-selection and
+           current/upcoming-weekend highlighting can still be assessed for
+           all four before the real 2026 programme is published. -->
+      <section id="festival-slide" class="festival-slide">
+        <div class="festival-header">
+          <h1>Festiwal Młodej Muzyki 2025</h1>
+          <div class="weekend-row" id="weekend-row">
+            <button class="weekend-pane" data-weekend-index="0">
+              <p class="pane-dates">4–6 września 2026</p>
+              <p class="pane-title">Pamięć i tożsamość</p>
+            </button>
+            <button class="weekend-pane" data-weekend-index="1">
+              <p class="pane-dates">11–13 września 2026</p>
+              <p class="pane-title">Dialog z tradycją</p>
+            </button>
+            <button class="weekend-pane" data-weekend-index="2">
+              <p class="pane-dates">18–20 września 2026</p>
+              <p class="pane-title">Nowe brzmienia (Finał)</p>
+            </button>
+            <button class="weekend-pane" data-weekend-index="3">
+              <p class="pane-dates">25–27 września 2026</p>
+              <p class="pane-title">Weekend Szkoły Muzycznej</p>
+            </button>
+          </div>
+        </div>
+        <div class="event-row-wrapper">
+          <!-- Prev/next arrows, the same shopping-carousel mechanism on
+               both desktop (click) and mobile (tap), replacing the native
+               scrollbar the row used to rely on (see .event-scroll-row and
+               scrollEventRow() below). Native swipe/drag on the row itself
+               still works too; these are an additional, explicit
+               affordance, not the only way to move the row. -->
+          <button class="event-scroll-arrow event-scroll-arrow-prev" id="event-scroll-prev" type="button" aria-label="Poprzednie wydarzenie">
+            <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M10.5 2.5 4.5 8l6 5.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+          <div class="event-scroll-row" id="event-scroll-row"></div>
+          <button class="event-scroll-arrow event-scroll-arrow-next" id="event-scroll-next" type="button" aria-label="Następne wydarzenie">
+            <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M5.5 2.5 11.5 8l-6 5.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+        </div>
+        <div id="map">
+          <!-- Required public funding disclosure (see README.md's Contents
+               of the slides section): a single banner image carrying the
+               required text and every sponsor/patronage/organizer/partner
+               logo, replacing the previous text paragraph plus five
+               individually sized logos now that the funder requires many
+               more logos than five (see the .map-funding-notice-banner CSS
+               rule above). Shown by default, hidden by selectEvent() and
+               re-shown by selectWeekend() (see the .map-funding-notice CSS
+               rule above for the full reasoning). No standalone close
+               button: picking an event pane is the only way to hide it,
+               picking a weekend pane the only way to bring it back. -->
+          <div class="map-funding-notice" id="map-funding-notice">
+            <img class="map-funding-notice-banner" src="logos/fmm26_belka.jpg" alt="Dofinansowano ze środków Ministra Kultury i Dziedzictwa Narodowego pochodzących z Funduszu Promocji Kultury – państwowego funduszu celowego, w ramach programu „Muzyka”, realizowanego przez Narodowy Instytut Muzyki i Tańca. Logotypy sponsorów, patronatów, organizatora i partnerów festiwalu.">
+          </div>
+        </div>
+        <div class="map-footer"></div>
+      </section>
+    </div>
+  </div>
+
+  <!-- Fullscreen event poster overlay, shown on marker click. Not a
+       reveal.js slide: it is a plain overlay so the map and weekend/event
+       panes stay exactly where they were underneath it. -->
+  <div class="poster-overlay" id="poster-overlay">
+    <div class="poster-frame">
+      <!-- No src attribute until openPoster() sets one: browsers fetch an
+           <img> as soon as it is parsed even while hidden by CSS, so
+           src="" would otherwise make an unnecessary request for the
+           current page itself, interpreted as a relative empty URL. -->
+      <img id="poster-overlay-image" alt="">
+      <button class="poster-close" id="poster-close" aria-label="Zamknij plakat wydarzenia">&times;</button>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/reveal.js@6.0.1/dist/reveal.js"></script>
+  <script src="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.js"></script>
+  <script>
+    // Force the html element height to exactly the current visible
+    // viewport height before Reveal.initialize() reads it for scale calculation.
+    // dvh CSS is ignored on older mobile browsers; this JS approach works universally.
+    function syncViewportHeight() {
+      document.documentElement.style.height = window.innerHeight + 'px';
+    }
+    syncViewportHeight();
+    window.addEventListener('resize', syncViewportHeight);
+
+    // Swallow single-finger scroll gestures so the page never scrolls and the
+    // mobile URL bar neither hides nor shows on finger movements. Two-finger
+    // pinch zoom and panning while zoomed in remain available, which WCAG 2.2
+    // success criterion 1.4.4 requires. Map drags still work despite this:
+    // MapLibre GL JS registers its own touchmove listener directly on the
+    // map container, which is closer to the touch target than document and
+    // so runs first during the bubble phase; this handler's preventDefault()
+    // only stops the browser from also treating the drag as a page scroll,
+    // it does not undo MapLibre's already-completed pan update.
+    document.addEventListener('touchmove', function(event) {
+      if (event.touches.length > 1) return;
+      if (window.visualViewport && window.visualViewport.scale > 1) return;
+      event.preventDefault();
+    }, { passive: false });
+
+    // The event-scroll-row relies on native browser scrolling (no JS pans
+    // it), unlike the map. A native scroll has not happened yet when the
+    // document-level touchmove listener above runs, so its preventDefault()
+    // would block the row's scroll too unless stopped here first. Listeners
+    // registered directly on an element run before the same event reaches
+    // document during the bubble phase, so calling stopPropagation() here
+    // keeps the document handler from ever seeing this gesture.
+    document.getElementById('event-scroll-row').addEventListener('touchmove', function(event) {
+      event.stopPropagation();
+    }, { passive: true });
+
+    // Prev/next arrows (see .event-scroll-arrow and scrollEventRow above):
+    // one 'click' listener per button covers both a mouse click and a
+    // touch tap, since browsers synthesize a 'click' from a tap. The
+    // row's own 'scroll' event (fired for both the arrows' smooth scroll
+    // and native drag/swipe) keeps the arrows' shown/hidden state correct
+    // regardless of which of the two moved the row, and 'resize' re-checks
+    // it too, since a width/orientation change can change how much of the
+    // row's own content fits without scrolling at all.
+    document.getElementById('event-scroll-prev').addEventListener('click', function() {
+      scrollEventRow(-1);
+    });
+    document.getElementById('event-scroll-next').addEventListener('click', function() {
+      scrollEventRow(1);
+    });
+    document.getElementById('event-scroll-row').addEventListener('scroll', updateEventScrollArrows, { passive: true });
+    window.addEventListener('resize', updateEventScrollArrows);
+
+    // A mouse wheel or trackpad two-finger swipe both fire 'wheel' events,
+    // which overflow-x:auto would otherwise translate into horizontal
+    // scrolling; blocked here so the arrow buttons are the only non-touch
+    // way to move the row on desktop. A real touchscreen swipe fires
+    // touchstart/touchmove/touchend instead, never 'wheel', so this does
+    // not affect mobile drag-scrolling (handled separately by the
+    // touchmove listener above).
+    document.getElementById('event-scroll-row').addEventListener('wheel', function(event) {
+      event.preventDefault();
+    }, { passive: false });
+
+    // disableLayout: true opts out of Reveal's default behavior of scaling
+    // a fixed-aspect-ratio virtual canvas (1280x720) to fit the viewport,
+    // which letterboxed this design with blank bars whenever the actual
+    // window's aspect ratio was not exactly 16:9 - most noticeably as
+    // blank space below the map, since the map never got the remainder of
+    // a viewport shorter or taller than the assumed ratio. With
+    // disableLayout, the slide covers 100% of the real viewport and this
+    // file's own flex/vh-based CSS governs sizing, matching every aspect
+    // ratio instead of one assumed one.
+    Reveal.initialize({
+      backgroundColor: '#ffffff',
+      disableLayout: true,
+      controls: false,
+      progress: false,
+      hash: false
+    });
+
+    // Weekend 1's events use real, geocoded venue coordinates. Only the
+    // Inauguracja poster is a real, verified individual poster; the other
+    // events use the main festival poster as a generic placeholder, since
+    // the real 2026 poster for each does not exist yet. Weekend 2 has 2 of
+    // its 5 real events populated; Weekends 3-4 are left empty, since a
+    // couple of populated weekends are enough to assess this design.
+    // Every poster below is a local file in this directory (docs/), the
+    // full-size version, not the thumb_ one, for a sharper image on
+    // high-resolution phone displays. Not loaded from
+    // http://www.ptm.info.pl/ (the organizer's own site, where these were
+    // downloaded from) because that site serves plain HTTP, and mobile
+    // browsers block loading an HTTP image from a page served over HTTPS
+    // (GitHub Pages always serves HTTPS) as mixed content. Restore the
+    // ptm.info.pl URLs once the organizer's site supports HTTPS.
+    const weekendData = [
+      {
+        dates: '4–6 września 2026',
+        title: 'Pamięć i tożsamość',
+        startDate: '2026-09-04',
+        endDate: '2026-09-06',
+        events: [
+          {
+            // Both datetime (the displayed label) and date (used for the
+            // .past gray-shading check) are intentionally kept pointing to
+            // a past January date instead of the real 4 September, so
+            // design reviewers can tell why this one card is gray just by
+            // reading it, without knowing today's real date or needing a
+            // mocked clock. Revert both to the real
+            // 'Piątek, 4 września, 17:00' / '2026-09-04' once no longer
+            // needed for review.
+            datetime: 'Czwartek, 1 stycznia, 17:00',
+            date: '2026-01-01',
+            title: 'Inauguracja Festiwalu: Orkiestra Kameralna Polskiego Radia Amadeus',
+            venue: 'Centrum Kultury Dwór Artusa',
+            description: 'Koncert otwierający festiwal z udziałem Orkiestry Kameralnej Polskiego Radia Amadeus.',
+            coords: [18.6044919, 53.0098406],
+            poster: '01_inauguracja.png'
+          },
+          {
+            datetime: 'Sobota, 5 września, 17:00',
+            date: '2026-09-05',
+            title: 'Spotkanie z kompozytorką',
+            venue: 'Dom Heleny Grossówny',
+            description: 'Rozmowa o współczesnej muzyce polskiej z zaproszoną kompozytorką.',
+            coords: [18.6157848, 53.0105577],
+            poster: 'fmm_plakat.png'
+          },
+          {
+            datetime: 'Sobota, 5 września, 20:00',
+            date: '2026-09-05',
+            title: 'Głos Młodych: recital solistów',
+            venue: 'Sala Mieszczańska Ratusza Staromiejskiego',
+            description: 'Recital młodych solistów prezentujących nowy repertuar.',
+            coords: [18.6041183, 53.0105224],
+            poster: 'fmm_plakat.png'
+          },
+          {
+            datetime: 'Niedziela, 6 września, 17:00',
+            date: '2026-09-06',
+            title: 'Warsztaty kompozytorskie',
+            venue: 'Akademickie Centrum Kultury i Sztuki Od Nowa',
+            description: 'Warsztaty dla młodych twórców prowadzone przez kompozytorów festiwalu.',
+            coords: [18.5806390, 53.0191280],
+            poster: 'fmm_plakat.png'
+          },
+          {
+            datetime: 'Niedziela, 6 września, 20:00',
+            date: '2026-09-06',
+            title: 'Muzyka dawna: koncert organowy',
+            venue: 'Kościół Akademicki pw. Ducha Świętego w Toruniu',
+            description: 'Koncert muzyki dawnej na organach kościoła akademickiego.',
+            coords: [18.6031236, 53.0101616],
+            poster: 'fmm_plakat.png'
+          },
+          // Not part of the festival's real placeholder schedule (which
+          // gives Weekend 1 exactly five events): added only so the
+          // event-scroll-row's horizontal scroll can be exercised with a
+          // sixth card. Reuses Dwór Artusa's already geocoded coordinates
+          // rather than guessing a new venue location.
+          {
+            datetime: 'Niedziela, 6 września, 22:00',
+            date: '2026-09-06',
+            title: 'Dodatkowe wydarzenie testowe (scroll)',
+            venue: 'Centrum Kultury Dwór Artusa',
+            description: 'Karta dodana wyłącznie do przetestowania poziomego przewijania listy wydarzeń.',
+            coords: [18.6044919, 53.0098406],
+            poster: 'fmm_plakat.png'
+          }
+        ]
+      },
+      {
+        dates: '11–13 września 2026',
+        title: 'Dialog z tradycją',
+        startDate: '2026-09-11',
+        endDate: '2026-09-13',
+        // Only 2 of Weekend 2's 5 real placeholder events are included
+        // here, so the weekend-selection and default-highlight logic can
+        // be assessed without leaving this weekend empty. Venue
+        // coordinates are reused from Weekend 1, since both events happen
+        // at venues already geocoded there (Sala Mieszczańska, Dom Heleny
+        // Grossówny).
+        events: [
+          {
+            datetime: 'Piątek, 11 września, 17:00',
+            date: '2026-09-11',
+            title: 'Kaszubskie inspiracje: prawykonania',
+            venue: 'Sala Mieszczańska Ratusza Staromiejskiego',
+            description: 'Prawykonania utworów inspirowanych muzyką ludową Kaszub.',
+            coords: [18.6041183, 53.0105224],
+            poster: 'fmm_plakat.png'
+          },
+          {
+            datetime: 'Sobota, 12 września, 17:00',
+            date: '2026-09-12',
+            title: 'Wernisaż wystawy "Toruńscy Twórcy"',
+            venue: 'Dom Heleny Grossówny',
+            description: 'Otwarcie wystawy poświęconej toruńskim kompozytorom i wykonawcom.',
+            coords: [18.6157848, 53.0105577],
+            poster: 'fmm_plakat.png'
+          }
+        ]
+      },
+      { dates: '18–20 września 2026', title: 'Nowe brzmienia (Finał)', startDate: '2026-09-18', endDate: '2026-09-20', events: [] },
+      { dates: '25–27 września 2026', title: 'Weekend Szkoły Muzycznej', startDate: '2026-09-25', endDate: '2026-09-27', events: [] }
+    ];
+
+    /** Returns the index of the weekend to preselect: the first one whose
+     *  end date has not yet passed (covers both "currently running" and
+     *  "next upcoming"), or the last weekend if the festival is over. */
+    function getDefaultWeekendIndex() {
+      const today = new Date();
+      for (let i = 0; i < weekendData.length; i++) {
+        const weekendEnd = new Date(weekendData[i].endDate + 'T23:59:59');
+        if (today <= weekendEnd) return i;
+      }
+      return weekendData.length - 1;
+    }
+
+    /** True once the given day has fully elapsed (day resolution, not the
+     *  specific hour of a weekend's last day or an individual event),
+     *  used to gray-shade past weekend/event panes. */
+    function isDateFullyPast(isoDate) {
+      const today = new Date();
+      const endOfDay = new Date(isoDate + 'T23:59:59');
+      return today > endOfDay;
+    }
+
+    let selectedWeekendIndex = null;
+    let selectedEventIndex = null;
+    let eventMarkerInstances = [];
+    let mapInitialized = false;
+    let libreMap = null;
+    const mapCenter = [18.61, 53.012];
+    const mapInitialZoom = 13;
+
+    function updateWeekendPaneStyles() {
+      document.querySelectorAll('.weekend-pane').forEach(function(pane) {
+        const index = Number(pane.dataset.weekendIndex);
+        pane.classList.toggle('selected', index === selectedWeekendIndex);
+        pane.classList.toggle('past', isDateFullyPast(weekendData[index].endDate));
+      });
+    }
+
+    function updateEventPaneStyles() {
+      document.querySelectorAll('#event-scroll-row .event-pane').forEach(function(pane) {
+        const index = Number(pane.dataset.eventIndex);
+        pane.classList.toggle('selected', index === selectedEventIndex);
+      });
+    }
+
+    /** Scrolls the event row by one card width (its flex-basis, 200px,
+     *  plus the row's own 8px gap) in the given direction, smoothly. The
+     *  same function runs for a mouse click and a touch tap, since the
+     *  arrow buttons are plain <button> elements with a single 'click'
+     *  listener each (see below): no separate touch-vs-mouse code path,
+     *  so desktop and mobile share one mechanism. */
+    function scrollEventRow(direction) {
+      const eventRow = document.getElementById('event-scroll-row');
+      eventRow.scrollBy({ left: direction * 208, behavior: 'smooth' });
+    }
+
+    /** Shows/hides and enables/disables the prev/next arrows to match how
+     *  far the row can still scroll in each direction. Hidden rather than
+     *  merely disabled at either end (see .event-scroll-arrow.hidden
+     *  above), and hidden entirely when a weekend has no events yet (the
+     *  placeholder-note case, which has nothing to scroll to). A 1px
+     *  tolerance absorbs the sub-pixel scrollLeft values some browsers
+     *  report at the exact start/end of a scrollable element. */
+    function updateEventScrollArrows() {
+      const eventRow = document.getElementById('event-scroll-row');
+      const prevButton = document.getElementById('event-scroll-prev');
+      const nextButton = document.getElementById('event-scroll-next');
+      const canScroll = eventRow.scrollWidth > eventRow.clientWidth + 1;
+      prevButton.classList.toggle('hidden', !canScroll || eventRow.scrollLeft <= 1);
+      nextButton.classList.toggle('hidden', !canScroll ||
+        eventRow.scrollLeft + eventRow.clientWidth >= eventRow.scrollWidth - 1);
+    }
+
+    /** Rebuilds the horizontal event list for the given weekend. Event pane
+     *  content comes entirely from weekendData above, not user input, so
+     *  building it with innerHTML carries no injection risk.
+     *  Only datetime, title, and venue are shown (3 lines total);
+     *  event.description is kept in weekendData for a possible future
+     *  individual event slide but not rendered here. */
+    function renderEventRow(weekendIndex) {
+      const eventRow = document.getElementById('event-scroll-row');
+      eventRow.innerHTML = '';
+      const events = weekendData[weekendIndex].events;
+      if (events.length === 0) {
+        const note = document.createElement('p');
+        note.className = 'event-placeholder-note';
+        note.textContent = 'Wydarzenia tego weekendu zostaną dodane wkrótce.';
+        eventRow.appendChild(note);
+        updateEventScrollArrows();
+        return;
+      }
+      events.forEach(function(event, eventIndex) {
+        const pane = document.createElement('button');
+        pane.className = 'event-pane';
+        if (isDateFullyPast(event.date)) {
+          pane.classList.add('past');
+        }
+        pane.dataset.eventIndex = String(eventIndex);
+        pane.innerHTML =
+          '<p class="pane-datetime">' + event.datetime + '</p>' +
+          '<p class="pane-title">' + event.title + '</p>' +
+          '<p class="pane-venue">' + event.venue + '</p>';
+        pane.addEventListener('click', function() {
+          selectEvent(weekendIndex, eventIndex);
+        });
+        eventRow.appendChild(pane);
+      });
+      eventRow.scrollLeft = 0;
+      updateEventScrollArrows();
+    }
+
+    function clearEventMarkers() {
+      eventMarkerInstances.forEach(function(entry) { entry.marker.remove(); });
+      eventMarkerInstances = [];
+    }
+
+    function createMarkerElement() {
+      const element = document.createElement('div');
+      element.className = 'event-marker';
+      return element;
+    }
+
+    /** Places the single marker the map is ever allowed to show at once
+     *  (removing any previous one first), at the given event's venue.
+     *  Clicking the marker itself opens that event's poster; clicking the
+     *  event pane that led here only moves the marker and the map view,
+     *  per the design brief. */
+    function showSingleMarker(event) {
+      clearEventMarkers();
+      if (!libreMap) return;
+      const element = createMarkerElement();
+      element.addEventListener('click', function(clickEvent) {
+        clickEvent.stopPropagation();
+        openPoster(event);
+      });
+      const marker = new maplibregl.Marker({ element: element })
+        .setLngLat(event.coords)
+        .addTo(libreMap);
+      eventMarkerInstances.push({ marker: marker, event: event });
+    }
+
+    /** Removes any marker and returns the map to the city overview: the
+     *  state the map must be in initially, and whenever the weekend
+     *  selection changes (a different weekend's own events have no
+     *  relationship to whichever venue was previously marked). Not called
+     *  when the poster overlay closes; see closePoster()'s own comment
+     *  for why. */
+    function resetMapToDefault() {
+      clearEventMarkers();
+      if (!libreMap) return;
+      libreMap.easeTo({ center: mapCenter, zoom: mapInitialZoom, duration: 600 });
+    }
+
+    /** Shows the map funding-notice panel (see its own CSS rule above for
+     *  why this exists and why it carries no persisted dismissed state). */
+    function showFundingNotice() {
+      document.getElementById('map-funding-notice').classList.remove('hidden');
+    }
+
+    /** Hides the map funding-notice panel, called once a visitor picks an
+     *  event, signaling they want to see that venue's marker rather than
+     *  read the credits. */
+    function hideFundingNotice() {
+      document.getElementById('map-funding-notice').classList.add('hidden');
+    }
+
+    function selectWeekend(weekendIndex) {
+      selectedWeekendIndex = weekendIndex;
+      selectedEventIndex = null;
+      updateWeekendPaneStyles();
+      renderEventRow(weekendIndex);
+      updateEventPaneStyles();
+      resetMapToDefault();
+      // Re-covers the map with the funding notice on every weekend switch,
+      // including the initial one at page load (see selectWeekend() call
+      // near the bottom of this script), so the notice is not something a
+      // visitor can permanently dismiss for the rest of their visit.
+      showFundingNotice();
+    }
+
+    /** Called from an event pane: places the single allowed marker at that
+     *  event's venue and zooms/centers the map on it. Opening the poster
+     *  is the marker's own job on click (see showSingleMarker), not the
+     *  pane's. */
+    function selectEvent(weekendIndex, eventIndex) {
+      if (weekendIndex !== selectedWeekendIndex) {
+        selectWeekend(weekendIndex);
+      }
+      selectedEventIndex = eventIndex;
+      updateEventPaneStyles();
+      const event = weekendData[weekendIndex].events[eventIndex];
+      if (!event || !libreMap) return;
+      showSingleMarker(event);
+      hideFundingNotice();
+      libreMap.easeTo({ center: event.coords, zoom: Math.max(mapInitialZoom + 1, libreMap.getZoom()), duration: 600 });
+    }
+
+    function openPoster(event) {
+      const overlay = document.getElementById('poster-overlay');
+      const image = document.getElementById('poster-overlay-image');
+      image.src = event.poster;
+      image.alt = event.title;
+      overlay.classList.add('open');
+    }
+
+    /** Forces the browser to reset any pinch-zoom level back to 1.0,
+     *  without permanently disabling further pinch-zoom. The poster
+     *  overlay is commonly pinch-zoomed into to read the fine print, and
+     *  without this the zoom level otherwise stays applied to the whole
+     *  page once the poster closes. Momentarily adding maximum-scale to
+     *  the viewport meta tag's content is a documented cross-browser way
+     *  to force this reset (works in Safari iOS and Chrome Android).
+     *  Reverting the attribute on the next two animation frames, rather
+     *  than after a fixed timeout, waits for the browser to actually
+     *  paint the reset (one frame is not reliably enough in every
+     *  browser) instead of guessing a delay long enough to cover it. */
+    function resetPageZoom() {
+      const viewportMeta = document.querySelector('meta[name="viewport"]');
+      const originalContent = viewportMeta.getAttribute('content');
+      viewportMeta.setAttribute('content', originalContent + ', maximum-scale=1.0');
+      requestAnimationFrame(function() {
+        requestAnimationFrame(function() {
+          viewportMeta.setAttribute('content', originalContent);
+        });
+      });
+    }
+
+    /** Closing leaves the map exactly as it was while the poster was open
+     *  (marker still shown, still centered/zoomed on that event's venue)
+     *  and the event pane still marked .selected, rather than resetting to
+     *  the city overview: a visitor closing the poster is coming back to
+     *  the map to look at the venue they just read about, not asking to
+     *  start over. Revised from the original design brief, which called
+     *  for always resetting to the marker-free city overview on close;
+     *  still resets any pinch-zoom applied while the poster was open,
+     *  unrelated to the marker/selection state. */
+    function closePoster() {
+      document.getElementById('poster-overlay').classList.remove('open');
+      resetPageZoom();
+    }
+
+    document.getElementById('poster-close').addEventListener('click', closePoster);
+    document.getElementById('poster-overlay').addEventListener('click', function(event) {
+      if (event.target === event.currentTarget) closePoster();
+    });
+    document.addEventListener('keydown', function(event) {
+      if (event.key === 'Escape') closePoster();
+    });
+
+    document.querySelectorAll('.weekend-pane').forEach(function(pane) {
+      pane.addEventListener('click', function() {
+        selectWeekend(Number(pane.dataset.weekendIndex));
+      });
+    });
+
+    // Preselect the current/upcoming weekend immediately so the weekend row
+    // and event list are correct even before the map finishes initializing;
+    // resetMapToDefault() inside selectWeekend() is a no-op until libreMap
+    // exists (see its own guard above), so this does not touch the map.
+    selectWeekend(getDefaultWeekendIndex());
+
+    /** Re-applies whatever is currently selected to the map. Used after a
+     *  resize, where the map container's own size may have changed; the
+     *  marker itself does not need recreating on resize, since it is no
+     *  longer sized relative to a Reveal scale factor (disableLayout means
+     *  there is none - see Reveal.initialize above). */
+    function refreshMapView() {
+      if (!libreMap) return;
+      if (selectedEventIndex !== null && selectedWeekendIndex !== null) {
+        const event = weekendData[selectedWeekendIndex].events[selectedEventIndex];
+        if (event) {
+          libreMap.jumpTo({ center: event.coords, zoom: Math.max(mapInitialZoom + 1, libreMap.getZoom()) });
+          return;
+        }
+      }
+      libreMap.jumpTo({ center: mapCenter, zoom: mapInitialZoom });
+    }
+
+    function initializeMap() {
+      if (mapInitialized) return;
+      mapInitialized = true;
+
+      const mapElement = document.getElementById('map');
+      if (!mapElement) {
+        console.error('Map element not found');
+        return;
+      }
+
+      const map = new maplibregl.Map({
+        container: 'map',
+        // OpenFreeMap (openfreemap.org) is a free, MIT-licensed vector tile
+        // service with no API key, no mandatory branding, and no usage cap.
+        // Its "positron" style is the palette base for the festival's
+        // white/blue recoloring, applied once the style has loaded (below).
+        style: 'https://tiles.openfreemap.org/styles/positron',
+        center: mapCenter,
+        zoom: mapInitialZoom,
+        minZoom: 11,
+        maxZoom: 17,
+        attributionControl: false
+      });
+
+      libreMap = map;
+
+      map.addControl(new maplibregl.AttributionControl({
+        compact: false,
+        customAttribution: '&copy; <a href="https://marcindulak.github.io">marcindulak</a>'
+      }), 'bottom-left');
+      map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'bottom-left');
+
+      // Recolor the OpenFreeMap "positron" style to the festival's 2026
+      // cream/sage/navy and hide layers not useful for a venue overview
+      // (building outlines, railways, airport, administrative boundaries,
+      // and all but the city-level place label). festivalBlue/festivalInk
+      // are the same boosted-saturation navy as --primary-color/--text-
+      // color (see the :root comment near the top of this file for why
+      // the sampled ink needed that boost); festivalPaleBlue is the
+      // sampled sage (--sage-color), the 2026 counterpart to the 2025
+      // palette's own pale blue water fill, not itself boosted since it
+      // is a light decorative fill rather than text/line ink and carries
+      // no contrast requirement.
+      map.on('load', function() {
+        const festivalWhite = '#ffffff';
+        const festivalPaleBlue = '#bfcebb';
+        const festivalBlue = '#1c3960';
+        const festivalInk = '#1c3960';
+
+        // highway-name-major/minor (street name labels) are deliberately
+        // not hidden: venues sit on ordinary streets, so labeling those
+        // streets helps a visitor orient themselves in a way city/water
+        // labels alone do not.
+        // highway-name-path (footpath labels) stays hidden: too granular
+        // and cluttered at this zoom level to be worth the detail.
+        const hiddenLayers = [
+          'building',
+          'aeroway-taxiway', 'aeroway-runway-casing', 'aeroway-area', 'aeroway-runway',
+          'railway_transit', 'railway_transit_dashline',
+          'railway_service', 'railway_service_dashline',
+          'railway', 'railway_dashline',
+          'boundary_3', 'boundary_2', 'boundary_disputed',
+          'waterway_line_label',
+          'highway-name-path',
+          'highway-shield-non-us', 'highway-shield-us-interstate', 'road_shield_us',
+          'airport', 'label_other', 'label_village', 'label_town',
+          'label_country_3', 'label_country_2', 'label_country_1'
+        ];
+        hiddenLayers.forEach(function(layerId) {
+          map.setLayoutProperty(layerId, 'visibility', 'none');
+        });
+
+        map.setPaintProperty('background', 'background-color', festivalWhite);
+
+        ['park', 'landcover_ice_shelf', 'landcover_glacier', 'landuse_residential', 'landcover_wood'].forEach(function(layerId) {
+          map.setPaintProperty(layerId, 'fill-color', festivalWhite);
+        });
+
+        map.setPaintProperty('water', 'fill-color', festivalPaleBlue);
+
+        const roadLayers = [
+          'waterway', 'tunnel_motorway_casing', 'tunnel_motorway_inner',
+          'road_area_pier', 'road_pier',
+          'highway_path', 'highway_minor',
+          'highway_major_casing', 'highway_major_inner', 'highway_major_subtle',
+          'highway_motorway_casing', 'highway_motorway_inner', 'highway_motorway_subtle',
+          'highway_motorway_bridge_casing', 'highway_motorway_bridge_inner'
+        ];
+        roadLayers.forEach(function(layerId) {
+          const property = map.getLayer(layerId).type === 'fill' ? 'fill-color' : 'line-color';
+          map.setPaintProperty(layerId, property, festivalBlue);
+        });
+
+        [
+          'water_name_point_label', 'water_name_line_label', 'label_city', 'label_city_capital',
+          'highway-name-major', 'highway-name-minor'
+        ].forEach(function(layerId) {
+          map.setPaintProperty(layerId, 'text-color', festivalInk);
+          map.setPaintProperty(layerId, 'text-halo-color', festivalWhite);
+        });
+      });
+
+      // No marker is added here: the map must start without any marker
+      // (see resetMapToDefault() and the design brief), and the map's own
+      // constructor above already opens on mapCenter/mapInitialZoom, so
+      // there is nothing further to apply at this point.
+
+      // Orientation change or browser resize (e.g. mobile URL bar appearing/
+      // disappearing) causes MapLibre to lose track of its container
+      // dimensions. resize() forces MapLibre to recalculate and repaint
+      // tiles; the view is then reapplied since the container's available
+      // space may have changed.
+      window.addEventListener('resize', function() {
+        if (!libreMap) return;
+        libreMap.resize();
+        refreshMapView();
+      });
+    }
+
+    Reveal.addEventListener('ready', function() {
+      initializeMap();
+      // Try to lock to landscape; silently fails on iOS and on Android outside
+      // fullscreen/PWA context, which is the expected result for a normal page.
+      if (screen.orientation && screen.orientation.lock) {
+        screen.orientation.lock('landscape').catch(function(error) {
+          console.log('Cannot lock orientation to landscape:', error);
+        });
+      }
+    });
+  </script>
+</body>
+</html>
